@@ -339,18 +339,24 @@ namespace Org.Apache.REEF.Common.Files
         }
 
         /// <summary>
-        /// Name of the file that contains the driver name server address and port.
+<<<<<<< HEAD
+        /// The filename of the file that contains the driver name server address and port.
         /// </summary>
         /// <returns>File name that contains the dfs path for the DriverNameServerEndpoint</returns>
-        public string DriverJavaBridgeEndpointFileName
-        {
-            get { return DRIVER_JAVA_BRIDGE_ENDPOINT_FILE_NAME; }
+        public string GetDriverJavaBridgeEndpoint()
+        { 
+            return DRIVER_JAVA_BRIDGE_ENDPOINT_FILE_NAME;
         }
 
         /// <summary>
         /// Name of the file that contains the driver name server address and port.
         /// </summary>
         /// <returns>File name that contains the dfs path for the DriverNameServerEndpoint</returns>
+=======
+        /// Name of the file that contains the driver name server address and port.
+        /// </summary>
+        /// <returns>File name that contains the dfs path for the DriverNameServerEndpoint</returns>
+>>>>>>> 7b81827ff0f00ccf86dcd938c8fbaadaf6bc084a
         public string DriverJavaBridgeEndpointFileName
         {
             get { return DRIVER_JAVA_BRIDGE_ENDPOINT_FILE_NAME; }
