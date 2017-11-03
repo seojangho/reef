@@ -18,6 +18,7 @@
  */
 package org.apache.reef.javabridge.generic;
 
+import org.apache.reef.bridge.JavaBridge;
 import org.apache.reef.driver.client.JobMessageObserver;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.driver.context.ClosedContext;
@@ -35,6 +36,7 @@ import org.apache.reef.runtime.common.files.REEFFileNames;
 import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.annotations.Unit;
 import org.apache.reef.util.Optional;
+import org.apache.reef.util.exception.InvalidIdentifierException;
 import org.apache.reef.util.logging.CLRBufferedLogHandler;
 import org.apache.reef.util.logging.LoggingScope;
 import org.apache.reef.util.logging.LoggingScopeFactory;
@@ -51,10 +53,9 @@ import javax.inject.Inject;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Handler;
@@ -68,13 +69,14 @@ import java.util.logging.Logger;
 public final class JobDriver {
 
   private static final Logger LOG = Logger.getLogger(JobDriver.class.getName());
+
   /**
    * String codec is used to encode the results
    * before passing them back to the client.
    */
   private static final ObjectSerializableCodec<String> JVM_CODEC = new ObjectSerializableCodec<>();
+
   private final InteropLogger interopLogger = new InteropLogger();
-  private final NameServer nameServer;
   private final String nameServerInfo;
   private final HttpServer httpServer;
   private final ActiveContextBridgeFactory activeContextBridgeFactory;
@@ -121,7 +123,6 @@ public final class JobDriver {
    */
   private final LoggingScopeFactory loggingScopeFactory;
   private final Set<String> definedRuntimes;
-  private final DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
   private BridgeHandlerManager handlerManager = null;
   private boolean isRestarted = false;
@@ -130,6 +131,8 @@ public final class JobDriver {
   private final ConcurrentHashMap<String, AllocatedEvaluatorBridge> allocatedEvaluatorBridges =
       new ConcurrentHashMap<>();
   private EvaluatorRequestorBridge evaluatorRequestorBridge;
+
+  private final JavaBridge bridge;
 
 
   /**
@@ -154,21 +157,22 @@ public final class JobDriver {
             final REEFFileNames reefFileNames,
             final AllocatedEvaluatorBridgeFactory allocatedEvaluatorBridgeFactory,
             final CLRProcessFactory clrProcessFactory,
+            final JavaBridge javaBridge,
             @Parameter(DefinedRuntimes.class) final Set<String> definedRuntimes) {
     this.clock = clock;
     this.httpServer = httpServer;
     this.jobMessageObserver = jobMessageObserver;
     this.evaluatorRequestor = evaluatorRequestor;
-    this.nameServer = nameServer;
     this.driverStatusManager = driverStatusManager;
     this.activeContextBridgeFactory = activeContextBridgeFactory;
     this.allocatedEvaluatorBridgeFactory = allocatedEvaluatorBridgeFactory;
-    this.nameServerInfo = localAddressProvider.getLocalAddress() + ":" + this.nameServer.getPort();
+    this.nameServerInfo = localAddressProvider.getLocalAddress() + ":" + nameServer.getPort();
     this.loggingScopeFactory = loggingScopeFactory;
     this.reefFileNames = reefFileNames;
     this.localAddressProvider = localAddressProvider;
     this.clrProcessFactory = clrProcessFactory;
     this.definedRuntimes = definedRuntimes;
+    this.bridge = javaBridge;
   }
 
   private void setupBridge() {
@@ -184,31 +188,57 @@ public final class JobDriver {
         LOG.log(Level.INFO, "CLRBufferedLogHandler init complete.");
       }
 
-      final String portNumber = httpServer == null ? null : Integer.toString(httpServer.getPort());
-      if (portNumber != null) {
+      // Write the webserver ip address and port number to a file for the C# side.
+      LOG.log(Level.INFO, "Write HTTP endpoint to: {0}", reefFileNames.getDriverHttpEndpoint());
+      final String httpPortNumber = httpServer == null ? null : Integer.toString(httpServer.getPort());
+      if (httpPortNumber != null) {
         try {
           final File outputFileName = new File(reefFileNames.getDriverHttpEndpoint());
-          BufferedWriter out = new BufferedWriter(
-              new OutputStreamWriter(new FileOutputStream(outputFileName), StandardCharsets.UTF_8));
-          out.write(localAddressProvider.getLocalAddress() + ":" + portNumber + "\n");
-          out.close();
-        } catch (IOException ex) {
-          throw new RuntimeException(ex);
+          try (final BufferedWriter out = new BufferedWriter(
+                new OutputStreamWriter(new FileOutputStream(outputFileName), StandardCharsets.UTF_8))) {
+            out.write(localAddressProvider.getLocalAddress() + ":" + httpPortNumber + "\n");
+          }
+        } catch (final IOException ex) {
+          throw new RuntimeException(
+              "Error writing HTTP endpoint to: " + reefFileNames.getDriverHttpEndpoint(), ex);
         }
       }
 
-      this.evaluatorRequestorBridge =
-          new EvaluatorRequestorBridge(JobDriver.this.evaluatorRequestor, false, loggingScopeFactory,
-                  JobDriver.this.definedRuntimes);
-      JobDriver.this.handlerManager = new BridgeHandlerManager();
-      NativeInterop.clrSystemSetupBridgeHandlerManager(portNumber,
-          JobDriver.this.handlerManager, evaluatorRequestorBridge);
+      // Write the java bridge ip address and port number to a file for the C# side.
+      LOG.log(Level.INFO, "Write java bridge endpoint to: {0}", reefFileNames.getDriverJavaBridgeEndpoint());
+      try {
+        final InetSocketAddress javaBridgeAddress = bridge.getAddress();
+        final String javaBridgePort = Integer.toString(javaBridgeAddress.getPort());
+
+        final String address = localAddressProvider.getLocalAddress() + ":" + javaBridgePort;
+        final File outputFileName = new File(reefFileNames.getDriverJavaBridgeEndpoint());
+
+        try (final BufferedWriter out = new BufferedWriter(
+              new OutputStreamWriter(new FileOutputStream(outputFileName), StandardCharsets.UTF_8))) {
+          out.write(address + "\n");
+        }
+
+        LOG.log(Level.INFO, "Java bridge address: {0}", address);
+
+      } catch (final IOException ex) {
+        throw new RuntimeException(
+            "Error writing bridge endpoint to: " + reefFileNames.getDriverJavaBridgeEndpoint(), ex);
+      }
+
+      this.evaluatorRequestorBridge = new EvaluatorRequestorBridge(
+          this.evaluatorRequestor, false, this.loggingScopeFactory, this.definedRuntimes);
+
+      LOG.log(Level.INFO, "Instantiating BridgeHandlgerManager");
+      this.handlerManager = new BridgeHandlerManager();
+      NativeInterop.clrSystemSetupBridgeHandlerManager(
+          httpPortNumber, this.handlerManager, this.evaluatorRequestorBridge);
 
       try (final LoggingScope lp =
                this.loggingScopeFactory.getNewLoggingScope("setupBridge::clrSystemHttpServerHandlerOnNext")) {
         final HttpServerEventBridge httpServerEventBridge = new HttpServerEventBridge("SPEC");
-        NativeInterop.clrSystemHttpServerHandlerOnNext(JobDriver.this.handlerManager.getHttpServerEventHandler(),
-            httpServerEventBridge, this.interopLogger);
+        NativeInterop.clrSystemHttpServerHandlerOnNext(
+            this.handlerManager.getHttpServerEventHandler(), httpServerEventBridge, this.interopLogger);
+
         final String specList = httpServerEventBridge.getUriSpecification();
         LOG.log(Level.INFO, "Starting http server, getUriSpecification: {0}", specList);
         if (specList != null) {
@@ -237,7 +267,7 @@ public final class JobDriver {
     eval.setProcess(process);
     LOG.log(Level.FINE, "Allocated Evaluator: {0}, total running running {1}.",
         new Object[]{eval.getId(), JobDriver.this.contexts.size()});
-    final long handler = JobDriver.this.handlerManager.getAllocatedEvaluatorHandler();
+    final long handler = this.handlerManager.getAllocatedEvaluatorHandler();
     if (0 == handler) {
       throw new RuntimeException("Allocated Evaluator Handler not initialized by CLR.");
     }
@@ -246,8 +276,7 @@ public final class JobDriver {
     allocatedEvaluatorBridges.putIfAbsent(allocatedEvaluatorBridge.getId(), allocatedEvaluatorBridge);
     NativeInterop.clrSystemAllocatedEvaluatorHandlerOnNext(
         handler, allocatedEvaluatorBridge, this.interopLogger, this.nameServerInfo, eval.getId());
-    LOG.log(Level.FINE, "End of JobDriver.Allocated Evaluator: {0}, time: {1}",
-        new Object[] {eval.getId(), dateFormat.format(new Date())});
+    LOG.log(Level.FINE, "End of JobDriver.Allocated Evaluator: {0}", eval.getId());
   }
 
   private void handleFailedEvaluator(final FailedEvaluator eval, final boolean isRestartFailed) {
@@ -256,19 +285,17 @@ public final class JobDriver {
       for (final FailedContext failedContext : eval.getFailedContextList()) {
         final String failedContextId = failedContext.getId();
         LOG.log(Level.INFO, "removing context " + failedContextId + " from job driver contexts.");
-        JobDriver.this.contexts.remove(failedContextId);
+        this.contexts.remove(failedContextId);
       }
       final String message = "Evaluator " + eval.getId() + " failed with message: "
           + eval.getEvaluatorException().getMessage();
-      JobDriver.this.jobMessageObserver.sendMessageToClient(message.getBytes(StandardCharsets.UTF_8));
+      this.jobMessageObserver.sendMessageToClient(message.getBytes(StandardCharsets.UTF_8));
 
-      if (isRestartFailed) {
-        evaluatorFailedHandlerWaitForCLRBridgeSetup(
-            JobDriver.this.handlerManager.getDriverRestartFailedEvaluatorHandler(), eval, isRestartFailed);
-      } else {
-        evaluatorFailedHandlerWaitForCLRBridgeSetup(JobDriver.this.handlerManager.getFailedEvaluatorHandler(),
-            eval, isRestartFailed);
-      }
+      evaluatorFailedHandlerWaitForCLRBridgeSetup(
+          isRestartFailed
+            ? this.handlerManager.getDriverRestartFailedEvaluatorHandler()
+            : this.handlerManager.getFailedEvaluatorHandler(),
+          eval, isRestartFailed);
     }
   }
 
@@ -363,8 +390,7 @@ public final class JobDriver {
     @Override
     public void onNext(final ActiveContext context) {
       try (final LoggingScope ls = loggingScopeFactory.activeContextReceived(context.getId())) {
-        LOG.log(Level.INFO, "ActiveContextHandler: Context available: {0}",
-            new Object[]{context.getId()});
+        LOG.log(Level.INFO, "ActiveContextHandler: Context available: {0}", context.getId());
         JobDriver.this.contexts.put(context.getId(), context);
         JobDriver.this.submit(context);
       }
@@ -589,7 +615,12 @@ public final class JobDriver {
           LOG.log(Level.INFO, "Finished CLR bridge setup for {0}", startTime);
         }
 
-        NativeInterop.callClrSystemOnStartHandler();
+        try {
+          bridge.callClrSystemOnStartHandler();
+        } catch (final InvalidIdentifierException | InterruptedException e) {
+          LOG.log(Level.SEVERE, "CLR bridge error", e);
+          throw new RuntimeException("CLR bridge error", e);
+        }
         LOG.log(Level.INFO, "Driver Started");
       }
     }
@@ -715,7 +746,6 @@ public final class JobDriver {
     }
   }
 
-
   /**
    * Receive notification that the Context had completed.
    * Remove context from the list of active context.
@@ -736,7 +766,6 @@ public final class JobDriver {
       }
     }
   }
-
 
   /**
    * Receive notification that the Context had failed.

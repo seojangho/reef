@@ -67,6 +67,7 @@ under the License.
     <Compile Include="Bridge\Clr2java\IRunningTaskClr2Java.cs" />
     <Compile Include="Bridge\Clr2java\ISuspendedTaskClr2Java.cs" />
     <Compile Include="Bridge\Clr2java\ITaskMessageClr2Java.cs" />
+    <Compile Include="Bridge\ClrBridge.cs" />
     <Compile Include="Bridge\ClrClientHelper.cs" />
     <Compile Include="Bridge\ClrHandlerHelper.cs" />
     <Compile Include="Bridge\ClrSystemHandler.cs" />
@@ -179,6 +180,10 @@ under the License.
     <ProjectReference Include="$(SolutionDir)\Org.Apache.REEF.Wake\Org.Apache.REEF.Wake.csproj">
       <Project>{cdfb3464-4041-42b1-9271-83af24cd5008}</Project>
       <Name>Org.Apache.REEF.Wake</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Org.Apache.REEF.Bridge.CLR\Org.Apache.REEF.Bridge.CLR.csproj">
+      <Project>{e19ff4f8-ab45-4631-8017-e18d94d882dd}</Project>
+      <Name>Org.Apache.REEF.Bridge.CLR</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -65,6 +65,7 @@ under the License.
     <Compile Include="API\AppParameters.cs" />
     <Compile Include="API\AppParametersBuilder.cs" />
     <Compile Include="API\ClientFactory.cs" />
+    <Compile Include="API\DriverStatus.cs" />
     <Compile Include="API\Exceptions\ClasspathException.cs" />
     <Compile Include="API\Exceptions\JavaNotFoundException.cs" />
     <Compile Include="API\IREEFClient.cs" />
@@ -72,6 +73,7 @@ under the License.
     <Compile Include="API\JobParametersBuilder.cs" />
     <Compile Include="API\JobRequest.cs" />
     <Compile Include="API\JobRequestBuilder.cs" />
+    <Compile Include="API\JobRequestBuilderFactory.cs" />
     <Compile Include="API\TcpPortConfigurationModule.cs" />
     <Compile Include="Avro\AvroAppSubmissionParameters.cs" />
     <Compile Include="Avro\AvroJobSubmissionParameters.cs" />

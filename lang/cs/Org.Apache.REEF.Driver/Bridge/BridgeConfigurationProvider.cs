@@ -25,6 +25,7 @@ using Org.Apache.REEF.Tang.Interface;
 using Org.Apache.REEF.Tang.Util;
 using Org.Apache.REEF.Utilities.Diagnostics;
 using Org.Apache.REEF.Utilities.Logging;
+using Org.Apache.REEF.Tang.Implementations.Configuration;
 
 namespace Org.Apache.REEF.Driver.Bridge
 {
@@ -139,16 +140,19 @@ namespace Org.Apache.REEF.Driver.Bridge
         /// Instantiates an IInjector using the bridge configuration.
         /// </summary>
         /// <returns></returns>
-        internal static IInjector GetBridgeInjector(IEvaluatorRequestor evaluatorRequestor)
+        internal static IInjector GetBridgeInjector(
+            IEvaluatorRequestor evaluatorRequestor, params IConfiguration[] otherConfigs)
         {
             lock (LockObject)
             {
                 if (bridgeInjector == null)
                 {
-                    bridgeInjector = TangFactory.GetTang().NewInjector(GetBridgeConfiguration());
+                    bridgeInjector = TangFactory.GetTang().NewInjector(
+                        Configurations.Merge(otherConfigs), GetBridgeConfiguration());
+
                     if (evaluatorRequestor != null)
                     {
-                        bridgeInjector.BindVolatileInstance(GenericType<IEvaluatorRequestor>.Class, evaluatorRequestor);
+                        bridgeInjector.BindVolatileInstance(evaluatorRequestor);
                     }
                 }
 
