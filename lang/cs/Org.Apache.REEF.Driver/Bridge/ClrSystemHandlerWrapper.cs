@@ -252,6 +252,20 @@ namespace Org.Apache.REEF.Driver.Bridge
         }
 
         /// <summary>
+        /// Invokes event handlers registered to the driver start event.
+        /// </summary>
+        /// <param name="startTime"><see cref="DateTime"/> object that represents when this method was called.</param>
+        public static void Call_ClrSystemStartHandler_OnStart(DateTime startTime)
+        {
+            using (LOGGER.LogFunction("ClrSystemHandlerWrapper::Call_ClrSystemStartHandler_OnStart"))
+            {
+                LOGGER.Log(Level.Info, "*** Start time is " + startTime);
+                _driverBridge.StartHandlersOnNext(startTime);
+            }
+        }
+
+
+        /// <summary>
         /// Invokes event handlers registered to the driver restart event.
         /// </summary>
         /// <param name="driverRestartedClr2Java">Proxy object to the Java driver restart event object.</param>
