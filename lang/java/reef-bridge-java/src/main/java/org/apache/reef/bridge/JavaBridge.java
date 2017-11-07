@@ -105,10 +105,10 @@ public final class JavaBridge extends MultiObserverImpl {
    */
   public synchronized void onNext(final long identifier, final BridgeProtocol protocol)
         throws InvalidIdentifierException, InterruptedException{
-    isProtocolEstablished = true;
-    if (isSystemOnStartPending) {
-      callClrSystemOnStartHandler();
-    }
+    //isProtocolEstablished = true;
+    //if (isSystemOnStartPending) {
+      //callClrSystemOnStartHandler();
+    //}
     LOG.log(Level.FINEST, "Received protocol message: [{0}] {1}", new Object[] {identifier, protocol.getOffset()});
   }
 
@@ -121,8 +121,8 @@ public final class JavaBridge extends MultiObserverImpl {
    */
   public void onNext(final long identifier, final Acknowledgement acknowledgement)
         throws InvalidIdentifierException, InterruptedException {
-    LOG.log(Level.FINEST, "Received acknowledgement message for id = [{0}]", identifier);
-    blocker.release(acknowledgement.getMessageIdentifier());
+    //LOG.log(Level.FINEST, "Received acknowledgement message for id = [{0}]", identifier);
+    //blocker.release(acknowledgement.getMessageIdentifier());
   }
 
   /**
@@ -130,21 +130,22 @@ public final class JavaBridge extends MultiObserverImpl {
    * until an acknowledgement message is received.
    */
   public synchronized void callClrSystemOnStartHandler() throws InvalidIdentifierException, InterruptedException {
-    if (isProtocolEstablished) {
-      final long identifier = idCounter.getAndIncrement();
-      LOG.log(Level.FINE, "callClrSystemOnStartHandler called with id [{0}]", identifier);
-      blocker.block(identifier, new Runnable() {
-        @Override
-        public void run() {
-          final SystemOnStart msgStart = new SystemOnStart(timer.getCurrent() / 1000);
-          LOG.log(Level.FINE, "Send start message [{0}] :: {1}", new Object[]{identifier, msgStart});
-          network.send(identifier, msgStart);
-        }
-      });
-      isSystemOnStartPending = false;
-    } else {
-      isSystemOnStartPending = true;
-      LOG.log(Level.FINE, "callClrSystemOnStartHandler: protocol not established");
-    }
+    LOG.log(Level.FINE, "callClrSystemOnStartHandler callesd");
+    //if (isProtocolEstablished) {
+    //  final long identifier = idCounter.getAndIncrement();
+    //  LOG.log(Level.FINE, "callClrSystemOnStartHandler called with id [{0}]", identifier);
+    //  blocker.block(identifier, new Runnable() {
+    //    @Override
+    //    public void run() {
+    //      final SystemOnStart msgStart = new SystemOnStart(timer.getCurrent() / 1000);
+    //      LOG.log(Level.FINE, "Send start message [{0}] :: {1}", new Object[]{identifier, msgStart});
+    //      network.send(identifier, msgStart);
+    //    }
+    //  });
+    //  isSystemOnStartPending = false;
+    //} else {
+    //  isSystemOnStartPending = true;
+    //  LOG.log(Level.FINE, "callClrSystemOnStartHandler: protocol not established");
+    //}
   }
 }

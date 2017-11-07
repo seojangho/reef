@@ -42,8 +42,8 @@ namespace Org.Apache.REEF.Driver.Bridge
         private static readonly Logger LOGGER = Logger.GetLogger(typeof(ClrSystemHandlerWrapper));
 
         private static DriverBridge _driverBridge;
-        private static ClrBridge _clrBridge;
 
+        ////private static ClrBridge _clrBridge;
         public static void Call_ClrSystemAllocatedEvaluatorHandler_OnNext(ulong handle, IAllocatedEvaluatorClr2Java clr2Java)
         {
             using (LOGGER.LogFunction("ClrSystemHandlerWrapper::Call_ClrSystemAllocatedEvaluatorHandler_OnNext", clr2Java.GetId()))
@@ -264,7 +264,6 @@ namespace Org.Apache.REEF.Driver.Bridge
             }
         }
 
-
         /// <summary>
         /// Invokes event handlers registered to the driver restart event.
         /// </summary>
@@ -298,26 +297,30 @@ namespace Org.Apache.REEF.Driver.Bridge
 
         private static BridgeHandlerManager GetHandlers(string httpServerPortNumber, IEvaluatorRequestor evaluatorRequestor)
         {
+            var injector = BridgeConfigurationProvider.GetBridgeInjector(evaluatorRequestor);
             try
             {
-                IConfiguration clrConfig = TangFactory.GetTang().NewConfigurationBuilder()
-                    .BindNamedParameter<LocalObserver.MessageObserver, ClrBridge, object>(
-                         GenericType<LocalObserver.MessageObserver>.Class, impl: GenericType<ClrBridge>.Class)
-                    .BindStringNamedParam<ProtocolSerializer.AssemblyName>(typeof(NetworkTransport).Assembly.FullName)
-                    .BindStringNamedParam<ProtocolSerializer.MessageNamespace>("org.apache.reef.bridge.message")
-                    .Build();
+                ////IConfiguration clrConfig = TangFactory.GetTang().NewConfigurationBuilder()
+                ////    .BindNamedParameter<LocalObserver.MessageObserver, ClrBridge, object>(
+                ////         GenericType<LocalObserver.MessageObserver>.Class, impl: GenericType<ClrBridge>.Class)
+                ////    .BindStringNamedParam<ProtocolSerializer.AssemblyName>(typeof(NetworkTransport).Assembly.FullName)
+                ////    .BindStringNamedParam<ProtocolSerializer.MessageNamespace>("org.apache.reef.bridge.message")
+                ////    .Build();
 
-                var driverBridgeInjector =
-                    BridgeConfigurationProvider.GetBridgeInjector(evaluatorRequestor, clrConfig);
+                ////var driverBridgeInjector =
+                ////    BridgeConfigurationProvider.GetBridgeInjector(evaluatorRequestor, clrConfig);
 
-                var port = driverBridgeInjector.GetInstance<HttpServerPort>();
+                ////var port = driverBridgeInjector.GetInstance<HttpServerPort>();
+                var port = injector.GetInstance<HttpServerPort>();
                 port.PortNumber = httpServerPortNumber == null
                     ? 0
                     : int.Parse(httpServerPortNumber, CultureInfo.InvariantCulture);
 
-                _driverBridge = driverBridgeInjector.GetInstance<DriverBridge>();
-                _clrBridge = driverBridgeInjector.GetInstance<ClrBridge>();
-                _clrBridge.driverBridge = _driverBridge;
+                ////_driverBridge = driverBridgeInjector.GetInstance<DriverBridge>();
+                ////_clrBridge = driverBridgeInjector.GetInstance<ClrBridge>();
+                ////_clrBridge.driverBridge = _driverBridge;
+
+                _driverBridge = injector.GetInstance<DriverBridge>();
             }
             catch (Exception e)
             {

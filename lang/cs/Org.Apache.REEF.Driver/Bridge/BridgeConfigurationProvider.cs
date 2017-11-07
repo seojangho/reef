@@ -140,6 +140,7 @@ namespace Org.Apache.REEF.Driver.Bridge
         /// Instantiates an IInjector using the bridge configuration.
         /// </summary>
         /// <returns></returns>
+        /// internal static IInjector GetBridgeInjector(IEvaluatorRequestor evaluatorRequestor)
         internal static IInjector GetBridgeInjector(
             IEvaluatorRequestor evaluatorRequestor, params IConfiguration[] otherConfigs)
         {
@@ -150,9 +151,13 @@ namespace Org.Apache.REEF.Driver.Bridge
                     bridgeInjector = TangFactory.GetTang().NewInjector(
                         Configurations.Merge(otherConfigs), GetBridgeConfiguration());
 
+                    //// REMOVE ME
+                    ////bridgeInjector = TangFactory.GetTang().NewInjector(GetBridgeConfiguration());
                     if (evaluatorRequestor != null)
                     {
                         bridgeInjector.BindVolatileInstance(evaluatorRequestor);
+                        //// REMOVE ME
+                        ////bridgeInjector.BindVolatileInstance(GenericType<IEvaluatorRequestor>.Class, evaluatorRequestor);
                     }
                 }
 
