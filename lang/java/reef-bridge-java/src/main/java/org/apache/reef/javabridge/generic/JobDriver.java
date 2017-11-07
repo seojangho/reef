@@ -615,12 +615,13 @@ public final class JobDriver {
           LOG.log(Level.INFO, "Finished CLR bridge setup for {0}", startTime);
         }
 
-        try {
-          bridge.callClrSystemOnStartHandler();
-        } catch (final InvalidIdentifierException | InterruptedException e) {
-          LOG.log(Level.SEVERE, "CLR bridge error", e);
-          throw new RuntimeException("CLR bridge error", e);
-        }
+        NativeInterop.callClrSystemOnStartHandler();
+        //try {
+        //  bridge.callClrSystemOnStartHandler();
+        //} catch (final InvalidIdentifierException | InterruptedException e) {
+        //  LOG.log(Level.SEVERE, "CLR bridge error", e);
+        //  throw new RuntimeException("CLR bridge error", e);
+        //}
         LOG.log(Level.INFO, "Driver Started");
       }
     }
