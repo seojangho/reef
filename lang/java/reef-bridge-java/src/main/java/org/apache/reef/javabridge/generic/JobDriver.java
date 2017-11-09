@@ -132,7 +132,8 @@ public final class JobDriver {
       new ConcurrentHashMap<>();
   private EvaluatorRequestorBridge evaluatorRequestorBridge;
 
-  //private final JavaBridge bridge;
+  private final JavaBridge bridge;
+  private final boolean useJavaBridge = false;
 
 
   /**
@@ -157,7 +158,7 @@ public final class JobDriver {
             final REEFFileNames reefFileNames,
             final AllocatedEvaluatorBridgeFactory allocatedEvaluatorBridgeFactory,
             final CLRProcessFactory clrProcessFactory,
-            //final JavaBridge javaBridge,
+            final JavaBridge javaBridge,
             @Parameter(DefinedRuntimes.class) final Set<String> definedRuntimes) {
     this.clock = clock;
     this.httpServer = httpServer;
@@ -172,7 +173,7 @@ public final class JobDriver {
     this.localAddressProvider = localAddressProvider;
     this.clrProcessFactory = clrProcessFactory;
     this.definedRuntimes = definedRuntimes;
-    //this.bridge = javaBridge;
+    this.bridge = javaBridge;
   }
 
   private void setupBridge() {
@@ -205,31 +206,39 @@ public final class JobDriver {
       }
 
       // Write the java bridge ip address and port number to a file for the C# side.
-      //LOG.log(Level.INFO, "Write java bridge endpoint to: {0}", reefFileNames.getDriverJavaBridgeEndpoint());
-      //try {
-      //  final InetSocketAddress javaBridgeAddress = bridge.getAddress();
-      //  final String javaBridgePort = Integer.toString(javaBridgeAddress.getPort());
+      LOG.log(Level.INFO, "Write java bridge endpoint to: {0}", reefFileNames.getDriverJavaBridgeEndpoint());
+      try {
+        final InetSocketAddress javaBridgeAddress = bridge.getAddress();
+        final String javaBridgePort = Integer.toString(javaBridgeAddress.getPort());
 
-      //  final String address = localAddressProvider.getLocalAddress() + ":" + javaBridgePort;
-      //  final File outputFileName = new File(reefFileNames.getDriverJavaBridgeEndpoint());
+        final String address = localAddressProvider.getLocalAddress() + ":" + javaBridgePort;
+        final File outputFileName = new File(reefFileNames.getDriverJavaBridgeEndpoint());
 
-      //  try (final BufferedWriter out = new BufferedWriter(
-      //        new OutputStreamWriter(new FileOutputStream(outputFileName), StandardCharsets.UTF_8))) {
-      //    out.write(address + "\n");
-      //  }
+        try (final BufferedWriter out = new BufferedWriter(
+              new OutputStreamWriter(new FileOutputStream(outputFileName), StandardCharsets.UTF_8))) {
+          out.write(address + "\n");
+        }
 
-      //  LOG.log(Level.INFO, "Java bridge address: {0}", address);
+        LOG.log(Level.INFO, "Java bridge address: {0}", address);
 
-      //} catch (final IOException ex) {
-      //  throw new RuntimeException(
-      //      "Error writing bridge endpoint to: " + reefFileNames.getDriverJavaBridgeEndpoint(), ex);
-     // }
+      } catch (final IOException ex) {
+        throw new RuntimeException(
+            "Error writing bridge endpoint to: " + reefFileNames.getDriverJavaBridgeEndpoint(), ex);
+      }
 
       this.evaluatorRequestorBridge = new EvaluatorRequestorBridge(
           this.evaluatorRequestor, false, this.loggingScopeFactory, this.definedRuntimes);
 
       LOG.log(Level.INFO, "Instantiating BridgeHandlgerManager");
       this.handlerManager = new BridgeHandlerManager();
+
+      try {
+        bridge.callClrSystemSetupBridgeHandlerManager(
+          httpPortNumber, this.handlerManager, this.evaluatorRequestorBridge);
+      } catch (final InvalidIdentifierException | InterruptedException e) {
+        LOG.log(Level.SEVERE, "CLR bridge error", e);
+        throw new RuntimeException("CLR bridge error", e);
+      }
       NativeInterop.clrSystemSetupBridgeHandlerManager(
           httpPortNumber, this.handlerManager, this.evaluatorRequestorBridge);
 
@@ -607,6 +616,13 @@ public final class JobDriver {
   public final class StartHandler implements EventHandler<StartTime> {
     @Override
     public void onNext(final StartTime startTime) {
+      bridge.onInitializedHandler(new JavaBridgeInitializedHandler(), startTime);
+    }
+  }
+
+  public final class JavaBridgeInitializedHandler implements EventHandler<StartTime> {
+    @Override
+    public void onNext(final StartTime startTime) {
       try (final LoggingScope ls = loggingScopeFactory.driverStart(startTime)) {
         // CLR bridge setup must be done before other event handlers try to access the CLR bridge
         // thus we grab a lock on this instance
@@ -615,13 +631,14 @@ public final class JobDriver {
           LOG.log(Level.INFO, "Finished CLR bridge setup for {0}", startTime);
         }
 
+        try {
+          bridge.callClrSystemOnStartHandler();
+        } catch (final InvalidIdentifierException | InterruptedException e) {
+          LOG.log(Level.SEVERE, "CLR bridge error", e);
+          throw new RuntimeException("CLR bridge error", e);
+        }
         NativeInterop.callClrSystemOnStartHandler();
-        //try {
-        //  bridge.callClrSystemOnStartHandler();
-        //} catch (final InvalidIdentifierException | InterruptedException e) {
-        //  LOG.log(Level.SEVERE, "CLR bridge error", e);
-        //  throw new RuntimeException("CLR bridge error", e);
-        //}
+
         LOG.log(Level.INFO, "Driver Started");
       }
     }

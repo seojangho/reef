@@ -17,9 +17,6 @@
  * under the License.
  */
 [
-  /*
-   * Message protocol for the Java/C# bridge communications.
-   */
   { "type":"record", "name":"BridgeProtocol", "namespace":"org.apache.reef.bridge.message",
     "doc":"Negotiate Java/C# bridge protocol messages.",
     "fields": [
@@ -27,7 +24,7 @@
     ]
   },
   { "type": "record", "name": "SetupBridge", "namespace": "org.apache.reef.bridge.message",
-    "doc": "Notify the C# bridge of the http port of the Java bridge webserver.",
+    "doc": "Setup the C# bridge.",
     "fields": [
       { "name": "httpServerPortNumber", "type": "int", "doc": "The Java bridge http server port number." }
     ]

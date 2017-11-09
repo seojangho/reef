@@ -33,7 +33,7 @@ namespace Org.Apache.REEF.Driver.Bridge
     internal sealed class ClrBridge : IObserver<IMessageInstance<SystemOnStart>>
     {
         private static readonly Logger Logger = Logger.GetLogger(typeof(ClrBridge));
-        ////private static long identifierSource = 0;
+        private static long identifierSource = 0;
         private readonly NetworkTransport network;
         internal DriverBridge driverBridge { get; set; }
 
@@ -53,18 +53,30 @@ namespace Org.Apache.REEF.Driver.Bridge
         /// <param name="systemOnStart">Avro message from java indicating the system is starting.</param>
         public void OnNext(IMessageInstance<SystemOnStart> systemOnStart)
         {
-            ////Logger.Log(Level.Info, "SystemOnStart message received {0}", systemOnStart.Sequence);
+            Logger.Log(Level.Info, "SystemOnStart message received {0}", systemOnStart.Sequence);
 
-            ////// Convert Java time to C# time.
-            ////// Java - millisecs, C# - 100 nanosecs (muliply by 10000)
-            ////// Java - Jan 1, 1970, C# - Jan 1, 0001 (add 1969 years)
-            ////DateTime startTime = new DateTime(10000 * systemOnStart.Message.dateTime);
-            ////startTime = startTime.AddYears(1969);
-            ////Logger.Log(Level.Info, "Start time is {0}", startTime);
+            // Convert Java time to C# time.
+            // Java - millisecs, C# - 100 nanosecs (muliply by 10000)
+            // Java - Jan 1, 1970, C# - Jan 1, 0001 (add 1969 years)
+            DateTime startTime = new DateTime(10000 * systemOnStart.Message.dateTime);
+            startTime = startTime.AddYears(1969);
+            Logger.Log(Level.Info, "Start time is {0}", startTime);
 
             ////driverBridge.StartHandlersOnNext(startTime);
-            ////long identifier = Interlocked.Increment(ref identifierSource);
-            ////network.Send(identifier, new Acknowledgement(systemOnStart.Sequence));
+            long identifier = Interlocked.Increment(ref identifierSource);
+            network.Send(identifier, new Acknowledgement(systemOnStart.Sequence));
+        }
+
+        /// <summary>
+        /// Callback to process the SetupBridge message from the Java side of the bridge.
+        /// </summary>
+        /// <param name="systemOnStart">Avro message from java indicating the system is starting.</param>
+        public void OnNext(IMessageInstance<SetupBridge> setupBridge)
+        {
+            Logger.Log(Level.Info, "SetupBridge message received {0}", setupBridge.Sequence);
+            ////ClrSystemHandlerWrapper.Call_ClrSystem_SetupBridgeHandlerManager();
+            long identifier = Interlocked.Increment(ref identifierSource);
+            network.Send(identifier, new Acknowledgement(setupBridge.Sequence));
         }
 
         /// <summary>

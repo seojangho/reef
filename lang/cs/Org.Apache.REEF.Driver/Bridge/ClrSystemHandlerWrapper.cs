@@ -297,7 +297,6 @@ namespace Org.Apache.REEF.Driver.Bridge
 
         private static BridgeHandlerManager GetHandlers(string httpServerPortNumber, IEvaluatorRequestor evaluatorRequestor)
         {
-            var injector = BridgeConfigurationProvider.GetBridgeInjector(evaluatorRequestor);
             try
             {
                 IConfiguration clrConfig = TangFactory.GetTang().NewConfigurationBuilder()
@@ -311,8 +310,6 @@ namespace Org.Apache.REEF.Driver.Bridge
                     BridgeConfigurationProvider.GetBridgeInjector(evaluatorRequestor, clrConfig);
 
                 var port = driverBridgeInjector.GetInstance<HttpServerPort>();
-                //// REMOVE ME
-                ////var port = injector.GetInstance<HttpServerPort>();
                 port.PortNumber = httpServerPortNumber == null
                     ? 0
                     : int.Parse(httpServerPortNumber, CultureInfo.InvariantCulture);
@@ -320,9 +317,6 @@ namespace Org.Apache.REEF.Driver.Bridge
                 _driverBridge = driverBridgeInjector.GetInstance<DriverBridge>();
                 _clrBridge = driverBridgeInjector.GetInstance<ClrBridge>();
                 _clrBridge.driverBridge = _driverBridge;
-
-                //// REMOVE ME
-                ////_driverBridge = injector.GetInstance<DriverBridge>();
             }
             catch (Exception e)
             {

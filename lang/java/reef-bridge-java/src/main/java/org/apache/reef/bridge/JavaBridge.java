@@ -20,9 +20,13 @@ package org.apache.reef.bridge;
 import org.apache.reef.bridge.message.Acknowledgement;
 import org.apache.reef.bridge.message.BridgeProtocol;
 import org.apache.reef.bridge.message.SystemOnStart;
+import org.apache.reef.javabridge.BridgeHandlerManager;
+import org.apache.reef.javabridge.EvaluatorRequestorBridge;
 import org.apache.reef.util.MultiAsyncToSync;
 import org.apache.reef.util.exception.InvalidIdentifierException;
+import org.apache.reef.wake.EventHandler;
 import org.apache.reef.wake.impl.MultiObserverImpl;
+import org.apache.reef.wake.time.event.StartTime;
 import org.apache.reef.wake.time.runtime.Timer;
 
 import javax.inject.Inject;
@@ -43,8 +47,9 @@ public final class JavaBridge extends MultiObserverImpl {
   private final AtomicLong idCounter = new AtomicLong(0);
   private final NetworkTransport network;
   private boolean isProtocolEstablished = false;
-  private boolean isSystemOnStartPending = false;
   private final Timer timer;
+  private EventHandler<StartTime> initializedHander;
+  private StartTime startTime;
 
   /**
    * Implements the RPC interface to the C# side of the bridge.
@@ -69,17 +74,22 @@ public final class JavaBridge extends MultiObserverImpl {
    * @return true after the two sides of the bridge have established the messaging
    * protocol; otherwise; false.
    */
-  synchronized boolean isProtocolEstablished() {
+  public synchronized boolean isProtocolEstablished() {
     return isProtocolEstablished;
   }
 
   /**
-   * Indicates whether or the not a communication start has been between has been
-   * requested between the two sides of the bridge.
-   * @return true if a start message is pending before the protocol is established.
+   *
+   * @param initializedHander
+   * @param startTime
    */
-  synchronized boolean isSystemOnStartPending() {
-    return isSystemOnStartPending;
+  public synchronized void onInitializedHandler(
+          final EventHandler<StartTime> initializedHander, StartTime startTime) {
+    this.initializedHander = initializedHander;
+    this.startTime = startTime;
+    if (isProtocolEstablished()) {
+      this.initializedHander.onNext(startTime);
+    }
   }
 
   /**
@@ -105,10 +115,10 @@ public final class JavaBridge extends MultiObserverImpl {
    */
   public synchronized void onNext(final long identifier, final BridgeProtocol protocol)
         throws InvalidIdentifierException, InterruptedException{
-    //isProtocolEstablished = true;
-    //if (isSystemOnStartPending) {
-      //callClrSystemOnStartHandler();
-    //}
+    isProtocolEstablished = true;
+    if (initializedHander != null) {
+      initializedHander.onNext(startTime);
+    }
     LOG.log(Level.FINEST, "Received protocol message: [{0}] {1}", new Object[] {identifier, protocol.getOffset()});
   }
 
@@ -121,31 +131,50 @@ public final class JavaBridge extends MultiObserverImpl {
    */
   public void onNext(final long identifier, final Acknowledgement acknowledgement)
         throws InvalidIdentifierException, InterruptedException {
-    //LOG.log(Level.FINEST, "Received acknowledgement message for id = [{0}]", identifier);
-    //blocker.release(acknowledgement.getMessageIdentifier());
+    LOG.log(Level.FINEST, "Received acknowledgement message for id = [{0}]", identifier);
+    blocker.release(acknowledgement.getMessageIdentifier());
+  }
+
+   /**
+   * Sends a SetupBridge message to the CLR bridge and blocks the caller
+   * until an acknowledgement message is received.
+   *
+   * @param httpPortNumber
+   * @param handlerManager
+   * @param javaEvaluatorRequestorBridge
+   */
+  public void callClrSystemSetupBridgeHandlerManager(final String httpPortNumber,
+        final BridgeHandlerManager handlerManager, final EvaluatorRequestorBridge javaEvaluatorRequestorBridge)
+          throws InvalidIdentifierException, InterruptedException {
+
+    final long identifier = idCounter.getAndIncrement();
+    LOG.log(Level.FINE, "clrSystemSetupBridgeHandlerManager called with id [{0}]", identifier);
+
+    blocker.block(identifier, new Runnable() {
+      @Override
+      public void run() {
+        final SystemOnStart msgStart = new SystemOnStart(timer.getCurrent() / 1000);
+        LOG.log(Level.FINE, "Send start message [{0}] :: {1}", new Object[]{identifier, msgStart});
+        network.send(identifier, msgStart);
+      }
+    });
   }
 
   /**
    * Sends a SystemOnStart message to the CLR bridge and blocks the caller
    * until an acknowledgement message is received.
    */
-  public synchronized void callClrSystemOnStartHandler() throws InvalidIdentifierException, InterruptedException {
-    LOG.log(Level.FINE, "callClrSystemOnStartHandler callesd");
-    //if (isProtocolEstablished) {
-    //  final long identifier = idCounter.getAndIncrement();
-    //  LOG.log(Level.FINE, "callClrSystemOnStartHandler called with id [{0}]", identifier);
-    //  blocker.block(identifier, new Runnable() {
-    //    @Override
-    //    public void run() {
-    //      final SystemOnStart msgStart = new SystemOnStart(timer.getCurrent() / 1000);
-    //      LOG.log(Level.FINE, "Send start message [{0}] :: {1}", new Object[]{identifier, msgStart});
-    //      network.send(identifier, msgStart);
-    //    }
-    //  });
-    //  isSystemOnStartPending = false;
-    //} else {
-    //  isSystemOnStartPending = true;
-    //  LOG.log(Level.FINE, "callClrSystemOnStartHandler: protocol not established");
-    //}
+  public void callClrSystemOnStartHandler() throws InvalidIdentifierException, InterruptedException {
+    final long identifier = idCounter.getAndIncrement();
+    LOG.log(Level.FINE, "callClrSystemOnStartHandler called with id [{0}]", identifier);
+
+    blocker.block(identifier, new Runnable() {
+      @Override
+      public void run() {
+        final SystemOnStart msgStart = new SystemOnStart(timer.getCurrent() / 1000);
+        LOG.log(Level.FINE, "Send start message [{0}] :: {1}", new Object[]{identifier, msgStart});
+        network.send(identifier, msgStart);
+      }
+    });
   }
 }
