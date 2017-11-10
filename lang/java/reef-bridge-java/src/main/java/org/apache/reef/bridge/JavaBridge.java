@@ -47,9 +47,10 @@ public final class JavaBridge extends MultiObserverImpl {
   private final MultiAsyncToSync blocker = new MultiAsyncToSync(20, TimeUnit.SECONDS);
   private final AtomicLong idCounter = new AtomicLong(0);
   private final NetworkTransport network;
-  private boolean isProtocolEstablished = false;
   private final Timer timer;
-  private EventHandler<StartTime> initializedHander;
+
+  private boolean isProtocolEstablished = false;
+  private EventHandler<StartTime> startHandler;
   private StartTime startTime;
 
   /**
@@ -81,15 +82,15 @@ public final class JavaBridge extends MultiObserverImpl {
 
   /**
    *
-   * @param initializedHander
-   * @param startTime
+   * @param initializedStartHander
+   * @param initializedStartTime
    */
   public synchronized void onInitializedHandler(
-          final EventHandler<StartTime> initializedHander, StartTime startTime) {
-    this.initializedHander = initializedHander;
-    this.startTime = startTime;
+          final EventHandler<StartTime> initializedStartHander, final StartTime initializedStartTime) {
+    this.startHandler = initializedStartHander;
+    this.startTime = initializedStartTime;
     if (isProtocolEstablished()) {
-      this.initializedHander.onNext(startTime);
+      this.startHandler.onNext(initializedStartTime);
     }
   }
 
@@ -117,8 +118,8 @@ public final class JavaBridge extends MultiObserverImpl {
   public synchronized void onNext(final long identifier, final BridgeProtocol protocol)
         throws InvalidIdentifierException, InterruptedException{
     isProtocolEstablished = true;
-    if (initializedHander != null) {
-      initializedHander.onNext(startTime);
+    if (startHandler != null) {
+      startHandler.onNext(startTime);
     }
     LOG.log(Level.FINEST, "Received protocol message: [{0}] {1}", new Object[] {identifier, protocol.getOffset()});
   }
