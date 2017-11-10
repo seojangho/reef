@@ -150,15 +150,10 @@ namespace Org.Apache.REEF.Driver.Bridge
                 {
                     bridgeInjector = TangFactory.GetTang().NewInjector(
                         Configurations.Merge(otherConfigs), GetBridgeConfiguration());
-
-                    //// REMOVE ME
-                    ////bridgeInjector = TangFactory.GetTang().NewInjector(GetBridgeConfiguration());
-                    if (evaluatorRequestor != null)
-                    {
-                        bridgeInjector.BindVolatileInstance(evaluatorRequestor);
-                        //// REMOVE ME
-                        ////bridgeInjector.BindVolatileInstance(GenericType<IEvaluatorRequestor>.Class, evaluatorRequestor);
-                    }
+                }
+                if (evaluatorRequestor != null)
+                {
+                    bridgeInjector.BindVolatileInstance(evaluatorRequestor);
                 }
 
                 return bridgeInjector;

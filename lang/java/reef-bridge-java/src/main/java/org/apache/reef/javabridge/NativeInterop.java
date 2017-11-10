@@ -33,9 +33,9 @@ public final class NativeInterop {
 
   public static native void loadClrAssembly(final String filePath);
 
-  public static native void callClrSystemOnStartHandler();
-
   public static native void clrBufferedLog(final int level, final String message);
+
+  public static native void callClrSystemOnStartHandler();
 
   public static native void clrSystemAllocatedEvaluatorHandlerOnNext(
       final long handle,
@@ -145,6 +145,8 @@ public final class NativeInterop {
       final BridgeHandlerManager bridgeHandlerManager,
       final EvaluatorRequestorBridge javaEvaluatorRequestorBridge
   );
+
+  public static native void clrSetupBridge();
 
   /**
    * Empty private constructor to prohibit instantiation of utility class.

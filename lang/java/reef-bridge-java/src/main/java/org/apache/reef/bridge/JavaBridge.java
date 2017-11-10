@@ -19,6 +19,7 @@ package org.apache.reef.bridge;
 
 import org.apache.reef.bridge.message.Acknowledgement;
 import org.apache.reef.bridge.message.BridgeProtocol;
+import org.apache.reef.bridge.message.SetupBridge;
 import org.apache.reef.bridge.message.SystemOnStart;
 import org.apache.reef.javabridge.BridgeHandlerManager;
 import org.apache.reef.javabridge.EvaluatorRequestorBridge;
@@ -153,9 +154,9 @@ public final class JavaBridge extends MultiObserverImpl {
     blocker.block(identifier, new Runnable() {
       @Override
       public void run() {
-        final SystemOnStart msgStart = new SystemOnStart(timer.getCurrent() / 1000);
-        LOG.log(Level.FINE, "Send start message [{0}] :: {1}", new Object[]{identifier, msgStart});
-        network.send(identifier, msgStart);
+        final SetupBridge msgSetupBridge = new SetupBridge(httpPortNumber);
+        LOG.log(Level.FINE, "Send setup bridge message [{0}] :: {1}", new Object[]{identifier, msgSetupBridge});
+        network.send(identifier, msgSetupBridge);
       }
     });
   }
