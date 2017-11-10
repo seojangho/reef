@@ -240,7 +240,7 @@ public final class JobDriver {
       final String httpPortNumber = httpServer == null ? null : Integer.toString(httpServer.getPort());
       try {
         bridge.callClrSystemSetupBridgeHandlerManager(
-          httpPortNumber, this.handlerManager, this.evaluatorRequestorBridge);
+            httpPortNumber, this.handlerManager, this.evaluatorRequestorBridge);
       } catch (final InvalidIdentifierException | InterruptedException e) {
         LOG.log(Level.SEVERE, "CLR bridge error", e);
         throw new RuntimeException("CLR bridge error", e);
@@ -633,6 +633,9 @@ public final class JobDriver {
     }
   }
 
+  /**
+   * Handle the message that Java bridge has been initialized.
+   */
   public final class JavaBridgeInitializedHandler implements EventHandler<StartTime> {
     @Override
     public void onNext(final StartTime startTime) {
