@@ -56,8 +56,8 @@ namespace Org {
                         public ref class AllocatedEvaluatorClr2Java : public IAllocatedEvaluatorClr2Java {
                             jobject  _jobjectAllocatedEvaluator = NULL;
                             JavaVM* _jvm;
-							String^ _evaluatorId;
-							String^ _nameServerInfo;
+                            String^ _evaluatorId;
+                            String^ _nameServerInfo;
                         public:
                             AllocatedEvaluatorClr2Java(JNIEnv *env, jobject jallocatedEvaluator, jstring nameServerInfo, jstring evaluatorId);
                             ~AllocatedEvaluatorClr2Java();

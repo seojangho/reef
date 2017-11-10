@@ -17,20 +17,10 @@
  * under the License.
  */
 [
-  /*
-   * Notify Java bridge CLR bridge is ininitialized.
-   */
-  {
-    "namespace":"org.apache.reef.bridge.message",
-    "type":"record",
-    "name":"Protocol",
+  { "type":"record", "name":"AllocatedEvaluator", "namespace":"org.apache.reef.bridge.message",
     "doc":"Negotiate Java/C# bridge protocol messages.",
-    "fields":[
-      {
-        "name":"offset",
-        "type":"int",
-        "doc":"The index offset of the message identifiers."
-      }
+    "fields": [
+      { "name":"identifier", "type":"int", "doc":"The index offset of the message identifiers." }
     ]
   }
 ]

@@ -18,6 +18,7 @@
  */
 package org.apache.reef.bridge.client;
 
+import org.apache.reef.bridge.JavaBridge;
 import org.apache.reef.client.DriverConfiguration;
 import org.apache.reef.client.DriverServiceConfiguration;
 import org.apache.reef.client.DriverRestartConfiguration;
@@ -27,6 +28,8 @@ import org.apache.reef.runtime.common.driver.client.JobStatusHandler;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
 import org.apache.reef.tang.Tang;
+import org.apache.reef.wake.MultiObserver;
+import org.apache.reef.wake.avro.ProtocolSerializerNamespace;
 import org.apache.reef.webserver.HttpHandlerConfiguration;
 import org.apache.reef.webserver.HttpServerReefEventHandler;
 import org.apache.reef.webserver.ReefEventStateManager;
@@ -56,6 +59,11 @@ public final class Constants {
       .set(DriverConfiguration.ON_TASK_SUSPENDED, JobDriver.SuspendedTaskHandler.class)
       .set(DriverConfiguration.ON_EVALUATOR_COMPLETED, JobDriver.CompletedEvaluatorHandler.class)
       .set(DriverConfiguration.PROGRESS_PROVIDER, JobDriver.ProgressProvider.class)
+      .build();
+
+  private static final Configuration BRIDGE_CONFIGURATION = Tang.Factory.getTang().newConfigurationBuilder()
+      .bindNamedParameter(ProtocolSerializerNamespace.class, "org.apache.reef.bridge.message")
+      .bindImplementation(MultiObserver.class, JavaBridge.class)
       .build();
 
   /**
@@ -101,6 +109,7 @@ public final class Constants {
    */
   public static final Configuration DRIVER_CONFIGURATION_WITH_HTTP_AND_NAMESERVER = Configurations.merge(
       DRIVER_CONFIGURATION,
+      BRIDGE_CONFIGURATION,
       HTTP_SERVER_CONFIGURATION,
       NAME_SERVER_CONFIGURATION
   );

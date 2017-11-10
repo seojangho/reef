@@ -20,6 +20,7 @@ package org.apache.reef.bridge.client;
 
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.reef.annotations.audience.DriverSide;
+import org.apache.reef.bridge.JavaBridge;
 import org.apache.reef.client.DriverRestartConfiguration;
 import org.apache.reef.client.parameters.DriverConfigurationProviders;
 import org.apache.reef.io.TcpPortConfigurationProvider;
@@ -41,6 +42,8 @@ import org.apache.reef.tang.Configurations;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.formats.ConfigurationModule;
 import org.apache.reef.tang.formats.ConfigurationSerializer;
+import org.apache.reef.wake.MultiObserver;
+import org.apache.reef.wake.avro.ProtocolSerializerNamespace;
 import org.apache.reef.wake.remote.ports.parameters.TcpPortRangeBegin;
 import org.apache.reef.wake.remote.ports.parameters.TcpPortRangeCount;
 import org.apache.reef.wake.remote.ports.parameters.TcpPortRangeTryCount;
@@ -140,6 +143,7 @@ final class MultiRuntimeYarnBootstrapDriverConfigGenerator {
           final AvroLocalAppSubmissionParameters localAppSubmissionParams,
           final AvroJobSubmissionParameters jobSubmissionParameters,
           final MultiRuntimeDefinitionBuilder builder) {
+
     // create and serialize local configuration if defined
     final Configuration localModule = LocalDriverConfiguration.CONF
             .set(LocalDriverConfiguration.MAX_NUMBER_OF_EVALUATORS,
@@ -163,7 +167,7 @@ final class MultiRuntimeYarnBootstrapDriverConfigGenerator {
           final AvroMultiRuntimeAppSubmissionParameters multiruntimeAppSubmissionParams) {
 
     if (multiruntimeAppSubmissionParams.getLocalRuntimeAppParameters() == null &&
-            multiruntimeAppSubmissionParams.getYarnRuntimeAppParameters() == null){
+            multiruntimeAppSubmissionParams.getYarnRuntimeAppParameters() == null) {
       throw new IllegalArgumentException("At least on execution runtime has to be provided");
     }
 
@@ -174,13 +178,13 @@ final class MultiRuntimeYarnBootstrapDriverConfigGenerator {
     // generate multi runtime definition
     final MultiRuntimeDefinitionBuilder multiRuntimeDefinitionBuilder = new MultiRuntimeDefinitionBuilder();
 
-    if (multiruntimeAppSubmissionParams.getLocalRuntimeAppParameters() != null){
+    if (multiruntimeAppSubmissionParams.getLocalRuntimeAppParameters() != null) {
       addLocalRuntimeDefinition(
               multiruntimeAppSubmissionParams.getLocalRuntimeAppParameters(),
               jobSubmissionParameters, multiRuntimeDefinitionBuilder);
     }
 
-    if (multiruntimeAppSubmissionParams.getYarnRuntimeAppParameters() != null){
+    if (multiruntimeAppSubmissionParams.getYarnRuntimeAppParameters() != null) {
       addYarnRuntimeDefinition(
               yarnJobSubmissionParams,
               jobSubmissionParameters,
@@ -220,6 +224,8 @@ final class MultiRuntimeYarnBootstrapDriverConfigGenerator {
                     yarnJobSubmissionParams.getJobSubmissionDirectoryPrefix().toString())
             .bindImplementation(RuntimeClasspathProvider.class, YarnClasspathProvider.class)
             .bindConstructor(YarnConfiguration.class, YarnConfigurationConstructor.class)
+            .bindNamedParameter(ProtocolSerializerNamespace.class, "org.apache.reef.bridge.message")
+            .bindImplementation(MultiObserver.class, JavaBridge.class)
             .build();
 
     final Configuration driverConfiguration = Configurations.merge(
@@ -230,6 +236,7 @@ final class MultiRuntimeYarnBootstrapDriverConfigGenerator {
     // add restart configuration if needed
     if (multiruntimeAppSubmissionParams.getYarnRuntimeAppParameters() != null &&
             multiruntimeAppSubmissionParams.getYarnRuntimeAppParameters().getDriverRecoveryTimeout() > 0) {
+
       LOG.log(Level.FINE, "Driver restart is enabled.");
 
       final Configuration yarnDriverRestartConfiguration =

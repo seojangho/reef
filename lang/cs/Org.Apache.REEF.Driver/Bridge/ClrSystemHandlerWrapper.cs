@@ -28,6 +28,11 @@ using Org.Apache.REEF.Utilities.Attributes;
 using Org.Apache.REEF.Utilities.Diagnostics;
 using Org.Apache.REEF.Utilities.Logging;
 using ContextMessage = Org.Apache.REEF.Driver.Bridge.Events.ContextMessage;
+using Org.Apache.REEF.Tang.Implementations.Tang;
+using Org.Apache.REEF.Tang.Interface;
+using Org.Apache.REEF.Tang.Util;
+using Org.Apache.REEF.Bridge;
+using Org.Apache.REEF.Wake.Avro;
 
 namespace Org.Apache.REEF.Driver.Bridge
 {
@@ -37,6 +42,7 @@ namespace Org.Apache.REEF.Driver.Bridge
         private static readonly Logger LOGGER = Logger.GetLogger(typeof(ClrSystemHandlerWrapper));
 
         private static DriverBridge _driverBridge;
+        private static ClrBridge _clrBridge;
 
         public static void Call_ClrSystemAllocatedEvaluatorHandler_OnNext(ulong handle, IAllocatedEvaluatorClr2Java clr2Java)
         {
@@ -291,16 +297,26 @@ namespace Org.Apache.REEF.Driver.Bridge
 
         private static BridgeHandlerManager GetHandlers(string httpServerPortNumber, IEvaluatorRequestor evaluatorRequestor)
         {
-            var injector = BridgeConfigurationProvider.GetBridgeInjector(evaluatorRequestor);
-
             try
             {
-                var port = injector.GetInstance<HttpServerPort>();
+                IConfiguration clrConfig = TangFactory.GetTang().NewConfigurationBuilder()
+                    .BindNamedParameter<LocalObserver.MessageObserver, ClrBridge, object>(
+                         GenericType<LocalObserver.MessageObserver>.Class, impl: GenericType<ClrBridge>.Class)
+                    .BindStringNamedParam<ProtocolSerializer.AssemblyName>(typeof(NetworkTransport).Assembly.FullName)
+                    .BindStringNamedParam<ProtocolSerializer.MessageNamespace>("org.apache.reef.bridge.message")
+                    .Build();
+
+                var driverBridgeInjector =
+                    BridgeConfigurationProvider.GetBridgeInjector(evaluatorRequestor, clrConfig);
+
+                var port = driverBridgeInjector.GetInstance<HttpServerPort>();
                 port.PortNumber = httpServerPortNumber == null
                     ? 0
                     : int.Parse(httpServerPortNumber, CultureInfo.InvariantCulture);
 
-                _driverBridge = injector.GetInstance<DriverBridge>();
+                _driverBridge = driverBridgeInjector.GetInstance<DriverBridge>();
+                _clrBridge = driverBridgeInjector.GetInstance<ClrBridge>();
+                _clrBridge.driverBridge = _driverBridge;
             }
             catch (Exception e)
             {

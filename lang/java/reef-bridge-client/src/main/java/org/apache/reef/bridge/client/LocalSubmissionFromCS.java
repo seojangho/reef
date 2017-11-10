@@ -23,7 +23,10 @@ import org.apache.avro.io.JsonDecoder;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
+import org.apache.reef.bridge.JavaBridge;
+import org.apache.reef.bridge.JavaBridgeIdlenessSource;
 import org.apache.reef.client.parameters.DriverConfigurationProviders;
+import org.apache.reef.driver.parameters.DriverIdleSources;
 import org.apache.reef.io.TcpPortConfigurationProvider;
 import org.apache.reef.reef.bridge.client.avro.AvroAppSubmissionParameters;
 import org.apache.reef.reef.bridge.client.avro.AvroLocalAppSubmissionParameters;
@@ -35,6 +38,8 @@ import org.apache.reef.runtime.yarn.driver.parameters.JobSubmissionDirectory;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
 import org.apache.reef.tang.Tang;
+import org.apache.reef.wake.MultiObserver;
+import org.apache.reef.wake.avro.ProtocolSerializerNamespace;
 import org.apache.reef.wake.remote.address.LoopbackLocalAddressProvider;
 import org.apache.reef.wake.remote.ports.parameters.TcpPortRangeBegin;
 import org.apache.reef.wake.remote.ports.parameters.TcpPortRangeCount;
@@ -115,6 +120,9 @@ final class LocalSubmissionFromCS {
         .bindNamedParameter(TcpPortRangeTryCount.class, Integer.toString(tcpTryCount))
         .bindNamedParameter(JobSubmissionDirectory.class, runtimeRootFolder.getAbsolutePath())
         .bindList(DriverLaunchCommandPrefix.class, driverLaunchCommandPrefixList)
+        .bindNamedParameter(ProtocolSerializerNamespace.class, "org.apache.reef.bridge.message")
+        .bindImplementation(MultiObserver.class, JavaBridge.class)
+        .bindSetEntry(DriverIdleSources.class, JavaBridgeIdlenessSource.class)
         .build();
 
     return Configurations.merge(runtimeConfiguration, userProviderConfiguration);

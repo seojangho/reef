@@ -150,7 +150,7 @@ namespace Org.Apache.REEF.Wake.Avro
         public byte[] Write(object message, long sequence) 
         {
             string name = message.GetType().FullName;
-            Log.Log(Level.Verbose, "Serializing message: {0}", name);
+            Log.Log(Level.Info, "Serializing message: {0}", name);
             try
             { 
                 using (MemoryStream stream = new MemoryStream())

@@ -18,20 +18,23 @@
  */
 package org.apache.reef.javabridge.generic;
 
+import org.apache.reef.bridge.JavaBridge;
 import org.apache.reef.client.*;
 import org.apache.reef.io.network.naming.NameServerConfiguration;
 import org.apache.reef.javabridge.NativeInterop;
 import org.apache.reef.runtime.yarn.driver.YarnDriverRestartConfiguration;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
+import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Unit;
-import org.apache.reef.tang.exceptions.BindException;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
 import org.apache.reef.tang.formats.ConfigurationModule;
 import org.apache.reef.util.EnvironmentUtils;
 import org.apache.reef.util.logging.LoggingScope;
 import org.apache.reef.util.logging.LoggingScopeFactory;
 import org.apache.reef.wake.EventHandler;
+import org.apache.reef.wake.MultiObserver;
+import org.apache.reef.wake.avro.ProtocolSerializerNamespace;
 import org.apache.reef.webserver.HttpHandlerConfiguration;
 import org.apache.reef.webserver.HttpServerReefEventHandler;
 import org.apache.reef.webserver.ReefEventStateManager;
@@ -50,7 +53,7 @@ import java.util.logging.Logger;
  * Clr Bridge Client.
  */
 @Unit
-public class JobClient {
+public final class JobClient {
 
   /**
    * Standard java logger.
@@ -62,12 +65,6 @@ public class JobClient {
    * This variable is injected automatically in the constructor.
    */
   private final REEF reef;
-
-  /**
-   * Job Driver configuration.
-   */
-  private Configuration driverConfiguration;
-  private ConfigurationModule driverConfigModule;
 
   /**
    * A reference to the running job that allows client to send messages back to the job driver.
@@ -89,6 +86,7 @@ public class JobClient {
    * A factory that provides LoggingScope.
    */
   private final LoggingScopeFactory loggingScopeFactory;
+
   /**
    * Clr Bridge client.
    * Parameters are injected automatically by TANG.
@@ -96,28 +94,9 @@ public class JobClient {
    * @param reef Reference to the REEF framework.
    */
   @Inject
-  JobClient(final REEF reef, final LoggingScopeFactory loggingScopeFactory) throws BindException {
+  private JobClient(final REEF reef, final LoggingScopeFactory loggingScopeFactory) {
     this.loggingScopeFactory = loggingScopeFactory;
     this.reef = reef;
-    this.driverConfigModule = getDriverConfiguration();
-  }
-
-  public static ConfigurationModule getDriverConfiguration() {
-    return DriverConfiguration.CONF
-        .setMultiple(DriverConfiguration.GLOBAL_LIBRARIES, EnvironmentUtils.getAllClasspathJars())
-        .set(DriverConfiguration.ON_EVALUATOR_ALLOCATED, JobDriver.AllocatedEvaluatorHandler.class)
-        .set(DriverConfiguration.ON_EVALUATOR_FAILED, JobDriver.FailedEvaluatorHandler.class)
-        .set(DriverConfiguration.ON_CONTEXT_ACTIVE, JobDriver.ActiveContextHandler.class)
-        .set(DriverConfiguration.ON_CONTEXT_CLOSED, JobDriver.ClosedContextHandler.class)
-        .set(DriverConfiguration.ON_CONTEXT_FAILED, JobDriver.FailedContextHandler.class)
-        .set(DriverConfiguration.ON_CONTEXT_MESSAGE, JobDriver.ContextMessageHandler.class)
-        .set(DriverConfiguration.ON_TASK_MESSAGE, JobDriver.TaskMessageHandler.class)
-        .set(DriverConfiguration.ON_TASK_FAILED, JobDriver.FailedTaskHandler.class)
-        .set(DriverConfiguration.ON_TASK_RUNNING, JobDriver.RunningTaskHandler.class)
-        .set(DriverConfiguration.ON_TASK_COMPLETED, JobDriver.CompletedTaskHandler.class)
-        .set(DriverConfiguration.ON_DRIVER_STARTED, JobDriver.StartHandler.class)
-        .set(DriverConfiguration.ON_TASK_SUSPENDED, JobDriver.SuspendedTaskHandler.class)
-        .set(DriverConfiguration.ON_EVALUATOR_COMPLETED, JobDriver.CompletedEvaluatorHandler.class);
   }
 
   private static Configuration getNameServerConfiguration() {
@@ -129,7 +108,8 @@ public class JobClient {
   /**
    * @return the driver-side configuration to be merged into the DriverConfiguration to enable the HTTP server.
    */
-  public static Configuration getHTTPConfiguration() {
+  private static Configuration getHTTPConfiguration() {
+
     final Configuration httpHandlerConfiguration = HttpHandlerConfiguration.CONF
         .set(HttpHandlerConfiguration.HTTP_HANDLERS, HttpServerReefEventHandler.class)
         .build();
@@ -146,7 +126,8 @@ public class JobClient {
     return Configurations.merge(httpHandlerConfiguration, driverConfigurationForHttpServer);
   }
 
-  public static Configuration getYarnConfiguration() {
+  private static Configuration getYarnConfiguration() {
+
     final Configuration yarnDriverRestartConfiguration = YarnDriverRestartConfiguration.CONF
         .build();
 
@@ -162,45 +143,62 @@ public class JobClient {
     return Configurations.merge(yarnDriverRestartConfiguration, driverRestartHandlerConfigurations);
   }
 
-  public void addCLRFiles(final File folder) throws BindException {
-    try (final LoggingScope ls = this.loggingScopeFactory.getNewLoggingScope("JobClient::addCLRFiles")) {
-      ConfigurationModule result = this.driverConfigModule;
+  private Configuration getDriverConfiguration(final File folder) {
+
+    final Configuration bridgeConfig = Tang.Factory.getTang().newConfigurationBuilder()
+        .bindNamedParameter(ProtocolSerializerNamespace.class, "org.apache.reef.bridge.message")
+        .bindImplementation(MultiObserver.class, JavaBridge.class)
+        .build();
+
+    ConfigurationModule driverConfigModule = DriverConfiguration.CONF
+        .setMultiple(DriverConfiguration.GLOBAL_LIBRARIES, EnvironmentUtils.getAllClasspathJars())
+        .set(DriverConfiguration.ON_EVALUATOR_ALLOCATED, JobDriver.AllocatedEvaluatorHandler.class)
+        .set(DriverConfiguration.ON_EVALUATOR_FAILED, JobDriver.FailedEvaluatorHandler.class)
+        .set(DriverConfiguration.ON_CONTEXT_ACTIVE, JobDriver.ActiveContextHandler.class)
+        .set(DriverConfiguration.ON_CONTEXT_CLOSED, JobDriver.ClosedContextHandler.class)
+        .set(DriverConfiguration.ON_CONTEXT_FAILED, JobDriver.FailedContextHandler.class)
+        .set(DriverConfiguration.ON_CONTEXT_MESSAGE, JobDriver.ContextMessageHandler.class)
+        .set(DriverConfiguration.ON_TASK_MESSAGE, JobDriver.TaskMessageHandler.class)
+        .set(DriverConfiguration.ON_TASK_FAILED, JobDriver.FailedTaskHandler.class)
+        .set(DriverConfiguration.ON_TASK_RUNNING, JobDriver.RunningTaskHandler.class)
+        .set(DriverConfiguration.ON_TASK_COMPLETED, JobDriver.CompletedTaskHandler.class)
+        .set(DriverConfiguration.ON_DRIVER_STARTED, JobDriver.StartHandler.class)
+        .set(DriverConfiguration.ON_TASK_SUSPENDED, JobDriver.SuspendedTaskHandler.class)
+        .set(DriverConfiguration.ON_EVALUATOR_COMPLETED, JobDriver.CompletedEvaluatorHandler.class)
+        .set(DriverConfiguration.DRIVER_MEMORY, this.driverMemory)
+        .set(DriverConfiguration.DRIVER_IDENTIFIER, this.driverId)
+        .set(DriverConfiguration.DRIVER_JOB_SUBMISSION_DIRECTORY, this.jobSubmissionDirectory);
+
+    try (final LoggingScope ls = this.loggingScopeFactory.getNewLoggingScope("JobClient::getDriverConfiguration")) {
+
       final File[] files = folder.listFiles();
       if (files != null) {
         for (final File f : files) {
           if (f.canRead() && f.exists() && f.isFile()) {
-            result = result.set(DriverConfiguration.GLOBAL_FILES, f.getAbsolutePath());
+            driverConfigModule = driverConfigModule.set(DriverConfiguration.GLOBAL_FILES, f.getAbsolutePath());
           }
         }
       }
-
-      // set the driver memory, id and job submission directory
-      this.driverConfigModule = result
-          .set(DriverConfiguration.DRIVER_MEMORY, this.driverMemory)
-          .set(DriverConfiguration.DRIVER_IDENTIFIER, this.driverId)
-          .set(DriverConfiguration.DRIVER_JOB_SUBMISSION_DIRECTORY, this.jobSubmissionDirectory);
-
 
       final Path globalLibFile = Paths.get(NativeInterop.GLOBAL_LIBRARIES_FILENAME);
       if (!Files.exists(globalLibFile)) {
         LOG.log(Level.FINE, "Cannot find global classpath file at: {0}, assume there is none.",
             globalLibFile.toAbsolutePath());
       } else {
-        String globalLibString = "";
         try {
-          globalLibString = new String(Files.readAllBytes(globalLibFile), StandardCharsets.UTF_8);
+          final String globalLibString = new String(Files.readAllBytes(globalLibFile), StandardCharsets.UTF_8);
+          for (final String fileName : globalLibString.split(",")) {
+            driverConfigModule = driverConfigModule.set(
+                DriverConfiguration.GLOBAL_LIBRARIES, new File(fileName).getPath());
+          }
         } catch (final Exception e) {
-          LOG.log(Level.WARNING, "Cannot read from {0}, global libraries not added  " + globalLibFile.toAbsolutePath());
-        }
-
-        for (final String s : globalLibString.split(",")) {
-          final File f = new File(s);
-          this.driverConfigModule = this.driverConfigModule.set(DriverConfiguration.GLOBAL_LIBRARIES, f.getPath());
+          LOG.log(Level.WARNING,
+              "Cannot read global libraries from file: " + globalLibFile.toAbsolutePath(), e);
         }
       }
 
-      this.driverConfiguration = Configurations.merge(this.driverConfigModule.build(), getHTTPConfiguration(),
-          getNameServerConfiguration());
+      return Configurations.merge(
+          driverConfigModule.build(), bridgeConfig, getHTTPConfiguration(), getNameServerConfiguration());
     }
   }
 
@@ -211,26 +209,25 @@ public class JobClient {
    */
   public void submit(final File clrFolder, final boolean submitDriver,
                      final boolean local, final Configuration clientConfig) {
+
     try (final LoggingScope ls = this.loggingScopeFactory.driverSubmit(submitDriver)) {
+
+      Configuration driverConfig = getDriverConfiguration(clrFolder);
       if (!local) {
-        this.driverConfiguration = Configurations.merge(this.driverConfiguration, getYarnConfiguration());
+        driverConfig = Configurations.merge(driverConfig, getYarnConfiguration());
       }
 
-      try {
-        addCLRFiles(clrFolder);
-      } catch (final BindException e) {
-        LOG.log(Level.FINE, "Failed to bind", e);
-      }
       if (submitDriver) {
-        this.reef.submit(this.driverConfiguration);
+        this.reef.submit(driverConfig);
       } else {
-        final File driverConfig = new File(System.getProperty("user.dir") + "/driver.config");
+        final File driverConfigFile = new File(System.getProperty("user.dir") + "/driver.config");
         try {
-          new AvroConfigurationSerializer().toFile(Configurations.merge(this.driverConfiguration, clientConfig),
-              driverConfig);
-          LOG.log(Level.INFO, "Driver configuration file created at " + driverConfig.getAbsolutePath());
+          new AvroConfigurationSerializer().toFile(
+              Configurations.merge(driverConfig, clientConfig), driverConfigFile);
+          LOG.log(Level.INFO, "Driver configuration file created at " + driverConfigFile.getAbsolutePath());
         } catch (final IOException e) {
-          throw new RuntimeException("Cannot create driver configuration file at " + driverConfig.getAbsolutePath(), e);
+          throw new RuntimeException(
+              "Cannot create driver configuration file at " + driverConfigFile.getAbsolutePath(), e);
         }
       }
     }
@@ -252,7 +249,8 @@ public class JobClient {
     if (jobSubmissionDirectory != null && !jobSubmissionDirectory.equals("empty")) {
       this.jobSubmissionDirectory = jobSubmissionDirectory;
     } else {
-      LOG.log(Level.FINE, "No job submission directory provided by CLR user, will use " + this.jobSubmissionDirectory);
+      LOG.log(Level.FINE,
+          "No job submission directory provided by CLR user, will use {0}", this.jobSubmissionDirectory);
     }
   }
 
