@@ -19,9 +19,11 @@
 package org.apache.reef.bridge.client;
 
 import org.apache.reef.bridge.JavaBridge;
+import org.apache.reef.bridge.JavaBridgeIdlenessSource;
 import org.apache.reef.client.DriverConfiguration;
 import org.apache.reef.client.DriverServiceConfiguration;
 import org.apache.reef.client.DriverRestartConfiguration;
+import org.apache.reef.driver.parameters.DriverIdleSources;
 import org.apache.reef.io.network.naming.NameServerConfiguration;
 import org.apache.reef.javabridge.generic.JobDriver;
 import org.apache.reef.runtime.common.driver.client.JobStatusHandler;
@@ -61,9 +63,10 @@ public final class Constants {
       .set(DriverConfiguration.PROGRESS_PROVIDER, JobDriver.ProgressProvider.class)
       .build();
 
-  private static final Configuration BRIDGE_CONFIGURATION = Tang.Factory.getTang().newConfigurationBuilder()
+  private static final Configuration BRIDGE_CONFIGURATION = TANG.newConfigurationBuilder()
       .bindNamedParameter(ProtocolSerializerNamespace.class, "org.apache.reef.bridge.message")
       .bindImplementation(MultiObserver.class, JavaBridge.class)
+      .bindSetEntry(DriverIdleSources.class, JavaBridgeIdlenessSource.class)
       .build();
 
   /**

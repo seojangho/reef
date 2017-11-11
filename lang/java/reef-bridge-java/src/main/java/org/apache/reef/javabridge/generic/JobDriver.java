@@ -661,7 +661,6 @@ public final class JobDriver {
     }
   }
 
-
   /**
    * Job driver is restarted after previous crash.
    */
