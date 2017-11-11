@@ -25,18 +25,17 @@ import javax.inject.Inject;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 /**
  * Notifies the driver that the system is not idle when a SystemOnStart message is
  * pending or the bridge protocol has not been negotiated.
  */
 public final class JavaBridgeIdlenessSource implements DriverIdlenessSource {
+
   private static final Logger LOG = Logger.getLogger(JavaBridgeIdlenessSource.class.getName());
 
-  private final IdleMessage notIdleMessage =
-      new IdleMessage("JavaBridge", "Bridge protocol is pending.", false);
-  private final IdleMessage idleMessage =
-      new IdleMessage("JavaBridge", "No events pending", true);
+  private static final IdleMessage MSG_BUSY = new IdleMessage("JavaBridge", "Bridge protocol is pending", false);
+  private static final IdleMessage MSG_IDLE = new IdleMessage("JavaBridge", "No events pending", true);
+
   private final InjectionFuture<JavaBridge> bridge;
 
   @Inject
@@ -52,11 +51,8 @@ public final class JavaBridgeIdlenessSource implements DriverIdlenessSource {
    */
   @Override
   public IdleMessage getIdleStatus() {
-    LOG.log(Level.FINEST, "JavaBridgeIdlenessSource::getIdleStatus() called");
-    if ((bridge.get() != null) && !bridge.get().isProtocolEstablished()) {
-      return notIdleMessage;
-    } else {
-      return idleMessage;
-    }
+    final boolean isBusy = this.bridge.get().isProtocolEstablished();
+    LOG.log(Level.FINEST, "JavaBridgeIdlenessSource::getIdleStatus() called. Busy = {0}", isBusy);
+    return isBusy ? MSG_BUSY : MSG_IDLE;
   }
 }
