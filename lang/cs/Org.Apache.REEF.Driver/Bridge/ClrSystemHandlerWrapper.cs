@@ -18,6 +18,7 @@
 using System;
 using System.Globalization;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Org.Apache.REEF.Common.Context;
 using Org.Apache.REEF.Driver.Bridge.Clr2java;
 using Org.Apache.REEF.Driver.Bridge.Events;
@@ -300,17 +301,21 @@ namespace Org.Apache.REEF.Driver.Bridge
         /// </summary>
         public static void Call_ClrSystemSetupBridge()
         {
-            IConfiguration clrConfig = TangFactory.GetTang().NewConfigurationBuilder()
-                    .BindNamedParameter<LocalObserver.MessageObserver, ClrBridge, object>(
-                         GenericType<LocalObserver.MessageObserver>.Class, impl: GenericType<ClrBridge>.Class)
-                    .BindStringNamedParam<ProtocolSerializer.AssemblyName>(typeof(NetworkTransport).Assembly.FullName)
-                    .BindStringNamedParam<ProtocolSerializer.MessageNamespace>("org.apache.reef.bridge.message")
-                    .Build();
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                System.Threading.Thread.Sleep(2000);
+                IConfiguration clrConfig = TangFactory.GetTang().NewConfigurationBuilder()
+                        .BindNamedParameter<LocalObserver.MessageObserver, ClrBridge, object>(
+                             GenericType<LocalObserver.MessageObserver>.Class, impl: GenericType<ClrBridge>.Class)
+                        .BindStringNamedParam<ProtocolSerializer.AssemblyName>(typeof(NetworkTransport).Assembly.FullName)
+                        .BindStringNamedParam<ProtocolSerializer.MessageNamespace>("org.apache.reef.bridge.message")
+                        .Build();
 
                 var driverBridgeInjector =
-                    BridgeConfigurationProvider.GetBridgeInjector(null, clrConfig);
+                        BridgeConfigurationProvider.GetBridgeInjector(null, clrConfig);
 
-             _clrBridge = driverBridgeInjector.GetInstance<ClrBridge>();
+                _clrBridge = driverBridgeInjector.GetInstance<ClrBridge>();
+            });
         }
 
         private static BridgeHandlerManager GetHandlers(string httpServerPortNumber, IEvaluatorRequestor evaluatorRequestor)
