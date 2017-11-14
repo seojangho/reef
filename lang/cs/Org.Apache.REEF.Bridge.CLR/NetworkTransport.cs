@@ -19,6 +19,7 @@ using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
+using System.Threading;
 using org.apache.reef.bridge.message;
 using Org.Apache.REEF.Common.Files;
 using Org.Apache.REEF.Tang.Annotations;
@@ -34,11 +35,14 @@ namespace Org.Apache.REEF.Bridge
     /// Protocol Serializer to provide a simple send/receive interface
     /// between the CLR and Java bridges.
     /// </summary>
-    public sealed class NetworkTransport
+    public sealed class NetworkTransport : IDisposable
     {
         private static readonly Logger Logger = Logger.GetLogger(typeof(NetworkTransport));
 
-        private readonly BlockingCollection<byte[]> _queue = new BlockingCollection<byte[]>();
+        private readonly BlockingCollection<Tuple<long, object>> _sendQueue = new BlockingCollection<Tuple<long, object>>();
+        private CancellationTokenSource _tokenSource;
+        private CancellationToken _cancelToken;
+        private Thread _writer;
 
         private readonly ProtocolSerializer _serializer;
         private readonly IRemoteManager<byte[]> _remoteManager;
@@ -78,6 +82,12 @@ namespace Org.Apache.REEF.Bridge
             Logger.Log(Level.Info, "Connecting to java bridge on: [{0}]", javaIpEndPoint);
             _remoteObserver = _remoteManager.GetRemoteObserver(javaIpEndPoint);
 
+            // Initialize and start the message writer thread.
+            _tokenSource = new CancellationTokenSource();
+            _cancelToken = _tokenSource.Token;
+            _writer = new Thread(WriteMessage);
+            _writer.Start();
+
             // Negotiate the protocol.
             Send(0, new BridgeProtocol(100));
         }
@@ -90,7 +100,7 @@ namespace Org.Apache.REEF.Bridge
         public void Send(long identifier, object message)
         {
             Logger.Log(Level.Verbose, "Sending message: {0}", message);
-            _remoteObserver.OnNext(_serializer.Write(message, identifier));
+            _sendQueue.Add(new Tuple<long, object>(identifier, message));
         }
 
         /// <summary>
@@ -111,6 +121,36 @@ namespace Org.Apache.REEF.Bridge
                     int port = int.Parse(javaAddressStrs[1]);
                     return new IPEndPoint(javaBridgeIpAddress, port);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Stop the internal writer thread.
+        /// </summary>
+        public void Dispose()
+        {
+            try
+            {
+                _tokenSource.Cancel();
+                _writer.Join();
+                _tokenSource.Dispose();
+            }
+            catch (Exception e)
+            {
+                Logger.Log(Level.Info, "Disposing of writer thread: ", e);
+            }
+        }
+
+        /// <summary>
+        /// Write messages on the send queue to the network.
+        /// </summary>
+        void WriteMessage()
+        {
+            Tuple<long, object> item;
+            while (!_cancelToken.IsCancellationRequested)
+            {
+                item = _sendQueue.Take(_cancelToken);
+                _remoteObserver.OnNext(_serializer.Write(item.Item2, item.Item1));
             }
         }
     }

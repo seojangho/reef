@@ -592,6 +592,23 @@ JNIEXPORT void JNICALL Java_org_apache_reef_javabridge_NativeInterop_clrSystemSe
   }
 }
 
+/*
+ * Class:     org_apache_reef_javabridge_NativeInterop
+ * Method:    callClrSystemOnStartHandler
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_org_apache_reef_javabridge_NativeInterop_callClrSetupBridge
+(JNIEnv * env, jclass jclassx) {
+  try {
+    ManagedLog::LOGGER->Log("+Java_org_apache_reef_javabridge_NativeInterop_callClrSetupBridge");
+    ClrSystemHandlerWrapper::Call_ClrSystemSetupBridge();
+  }
+  catch (System::Exception^ ex) {
+    // we cannot get error back to java here since we don't have an object to call back (although we ideally should...)
+    ManagedLog::LOGGER->LogError("Exceptions in Java_org_apache_reef_javabridge_NativeInterop_callClrSetupBridge", ex);
+  }
+}
+
 static JNINativeMethod methods[] = {
   { "loadClrAssembly", "(Ljava/lang/String;)V", (void*)&Java_org_apache_reef_javabridge_NativeInterop_loadClrAssembly },
 
@@ -659,6 +676,9 @@ static JNINativeMethod methods[] = {
 
   { "clrSystemSetupBridgeHandlerManager", "(Ljava/lang/String;Lorg/apache/reef/javabridge/BridgeHandlerManager;Lorg/apache/reef/javabridge/EvaluatorRequestorBridge;)V",
   (void*)&Java_org_apache_reef_javabridge_NativeInterop_clrSystemSetupBridgeHandlerManager },
+
+  { "clrSetupBridge", "()V",
+  (void*)&Java_org_apache_reef_javabridge_NativeInterop_callClrSetupBridge },
 };
 
 JNIEXPORT void JNICALL

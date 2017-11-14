@@ -24,12 +24,15 @@ import org.apache.reef.wake.avro.IMessageDeserializer;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Implementation of Avro message specific deserializer.
  * @param <TMessage> Java type of the message the instantiation can deserialize.
  */
 public class MessageDeserializerImpl<TMessage> implements IMessageDeserializer {
+  private static final Logger LOG = Logger.getLogger(MessageDeserializerImpl.class.getName());
   protected Class<TMessage> msgMetaClass;
   private final SpecificDatumReader<TMessage> messageReader;
 
@@ -57,9 +60,10 @@ public class MessageDeserializerImpl<TMessage> implements IMessageDeserializer {
 
     final TMessage message = messageReader.read(null, decoder);
     if (message != null) {
+      LOG.log(Level.FINEST, "Invoking message observer with message [{0}]", message);
       observer.onNext(sequence, message);
     } else {
-      throw new RuntimeException("Failed to deserialize message [" + msgMetaClass.getSimpleName() + "]");
+      throw new RuntimeException("Failed to deserialize message [" + msgMetaClass.getCanonicalName() + "]");
     }
   }
 }

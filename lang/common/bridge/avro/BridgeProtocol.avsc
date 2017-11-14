@@ -26,7 +26,7 @@
   { "type": "record", "name": "SetupBridge", "namespace": "org.apache.reef.bridge.message",
     "doc": "Setup the C# bridge.",
     "fields": [
-      { "name": "httpServerPortNumber", "type": "int", "doc": "The Java bridge http server port number." }
+      { "name": "httpServerPortNumber", "type": "string", "doc": "The Java bridge http server port number." }
     ]
   },
   { "type": "record", "name": "SystemOnStart", "namespace": "org.apache.reef.bridge.message",

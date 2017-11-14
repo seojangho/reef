@@ -176,7 +176,7 @@ public final class JobDriver {
     this.bridge = javaBridge;
   }
 
-  private void setupBridge() {
+  private void writeClrConfig() {
     // Signal to the clr buffered log handler that the driver has started and that
     // we can begin logging
     LOG.log(Level.INFO, "Initializing CLRBufferedLogHandler...");
@@ -196,12 +196,12 @@ public final class JobDriver {
         try {
           final File outputFileName = new File(reefFileNames.getDriverHttpEndpoint());
           try (final BufferedWriter out = new BufferedWriter(
-                new OutputStreamWriter(new FileOutputStream(outputFileName), StandardCharsets.UTF_8))) {
+            new OutputStreamWriter(new FileOutputStream(outputFileName), StandardCharsets.UTF_8))) {
             out.write(localAddressProvider.getLocalAddress() + ":" + httpPortNumber + "\n");
           }
         } catch (final IOException ex) {
           throw new RuntimeException(
-              "Error writing HTTP endpoint to: " + reefFileNames.getDriverHttpEndpoint(), ex);
+            "Error writing HTTP endpoint to: " + reefFileNames.getDriverHttpEndpoint(), ex);
         }
       }
 
@@ -215,7 +215,7 @@ public final class JobDriver {
         final File outputFileName = new File(reefFileNames.getDriverJavaBridgeEndpoint());
 
         try (final BufferedWriter out = new BufferedWriter(
-              new OutputStreamWriter(new FileOutputStream(outputFileName), StandardCharsets.UTF_8))) {
+          new OutputStreamWriter(new FileOutputStream(outputFileName), StandardCharsets.UTF_8))) {
           out.write(address + "\n");
         }
 
@@ -223,8 +223,13 @@ public final class JobDriver {
 
       } catch (final IOException ex) {
         throw new RuntimeException(
-            "Error writing bridge endpoint to: " + reefFileNames.getDriverJavaBridgeEndpoint(), ex);
+          "Error writing bridge endpoint to: " + reefFileNames.getDriverJavaBridgeEndpoint(), ex);
       }
+    }
+  }
+
+  private void setupBridge() {
+    try (final LoggingScope lb = this.loggingScopeFactory.setupBridge()) {
 
       this.evaluatorRequestorBridge = new EvaluatorRequestorBridge(
           this.evaluatorRequestor, false, this.loggingScopeFactory, this.definedRuntimes);
@@ -232,9 +237,10 @@ public final class JobDriver {
       LOG.log(Level.INFO, "Instantiating BridgeHandlgerManager");
       this.handlerManager = new BridgeHandlerManager();
 
+      final String httpPortNumber = httpServer == null ? null : Integer.toString(httpServer.getPort());
       try {
         bridge.callClrSystemSetupBridgeHandlerManager(
-          httpPortNumber, this.handlerManager, this.evaluatorRequestorBridge);
+            httpPortNumber, this.handlerManager, this.evaluatorRequestorBridge);
       } catch (final InvalidIdentifierException | InterruptedException e) {
         LOG.log(Level.SEVERE, "CLR bridge error", e);
         throw new RuntimeException("CLR bridge error", e);
@@ -616,10 +622,20 @@ public final class JobDriver {
   public final class StartHandler implements EventHandler<StartTime> {
     @Override
     public void onNext(final StartTime startTime) {
-      bridge.onInitializedHandler(new JavaBridgeInitializedHandler(), startTime);
+      try (final LoggingScope ls = loggingScopeFactory.driverStart(startTime)) {
+        LOG.log(Level.INFO, "StartHandler::onNext() called");
+        bridge.onInitializedHandler(new JavaBridgeInitializedHandler(), startTime);
+        synchronized (JobDriver.this) {
+          writeClrConfig();
+        }
+        NativeInterop.clrSetupBridge();
+      }
     }
   }
 
+  /**
+   * Handle the message that Java bridge has been initialized.
+   */
   public final class JavaBridgeInitializedHandler implements EventHandler<StartTime> {
     @Override
     public void onNext(final StartTime startTime) {
@@ -627,6 +643,7 @@ public final class JobDriver {
         // CLR bridge setup must be done before other event handlers try to access the CLR bridge
         // thus we grab a lock on this instance
         synchronized (JobDriver.this) {
+          // This becomes the entry point for the CLR side when the process is split.
           setupBridge();
           LOG.log(Level.INFO, "Finished CLR bridge setup for {0}", startTime);
         }
@@ -643,7 +660,6 @@ public final class JobDriver {
       }
     }
   }
-
 
   /**
    * Job driver is restarted after previous crash.

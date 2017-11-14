@@ -113,7 +113,7 @@ namespace Org.Apache.REEF.Wake.Avro
         internal void Register<TMessage>()
         {
             string name = typeof(TMessage).FullName;
-            Log.Log(Level.Info, "Registering message type: {0}", name);
+            Log.Log(Level.Info, "Registering message type: [{0}]", name);
 
             IAvroSerializer<TMessage> messageSerializer = AvroSerializer.Create<TMessage>();
             Serialize serialize = (MemoryStream stream, object message) =>
@@ -128,7 +128,7 @@ namespace Org.Apache.REEF.Wake.Avro
                 var msgObserver = observer as IObserver<IMessageInstance<TMessage>>;
                 if (msgObserver != null)
                 {
-                    Log.Log(Level.Verbose, "Invoking message observer {0} with message {1}", msgObserver, message);
+                    Log.Log(Level.Info, "Invoking message observer [{0}] with message [{1}]", msgObserver, message);
                     msgObserver.OnNext(new MessageInstance<TMessage>(sequence, message));
                 }
                 else
@@ -150,7 +150,7 @@ namespace Org.Apache.REEF.Wake.Avro
         public byte[] Write(object message, long sequence) 
         {
             string name = message.GetType().FullName;
-            Log.Log(Level.Info, "Serializing message: {0}", name);
+            Log.Log(Level.Info, "Serializing message: [{0}]", name);
             try
             { 
                 using (MemoryStream stream = new MemoryStream())
@@ -191,7 +191,7 @@ namespace Org.Apache.REEF.Wake.Avro
                 using (MemoryStream stream = new MemoryStream(data))
                 {
                     Header head = _headerSerializer.Deserialize(stream);
-                    Log.Log(Level.Verbose, "Message header {0}", head);
+                    Log.Log(Level.Info, "Message header [{0}]", head);
                     Deserialize deserialize;
                     if (_deserializeMap.TryGetValue(head.className, out deserialize))
                     {

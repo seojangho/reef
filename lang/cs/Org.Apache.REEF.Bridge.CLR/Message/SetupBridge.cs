@@ -28,7 +28,7 @@ namespace org.apache.reef.bridge.message
     [DataContract(Namespace = "org.apache.reef.bridge.message")]
     public partial class SetupBridge
     {
-        private const string JsonSchema = @"{""type"":""record"",""name"":""org.apache.reef.bridge.message.SetupBridge"",""doc"":""Setup the C# bridge."",""fields"":[{""name"":""httpServerPortNumber"",""doc"":""The Java bridge http server port number."",""type"":""int""}]}";
+        private const string JsonSchema = @"{""type"":""record"",""name"":""org.apache.reef.bridge.message.SetupBridge"",""doc"":""Setup the C# bridge."",""fields"":[{""name"":""httpServerPortNumber"",""doc"":""The Java bridge http server port number."",""type"":""string""}]}";
 
         /// <summary>
         /// Gets the schema.
@@ -45,7 +45,7 @@ namespace org.apache.reef.bridge.message
         /// Gets or sets the httpServerPortNumber field.
         /// </summary>
         [DataMember]
-        public int httpServerPortNumber { get; set; }
+        public string httpServerPortNumber { get; set; }
                 
         /// <summary>
         /// Initializes a new instance of the <see cref="SetupBridge"/> class.
@@ -58,7 +58,7 @@ namespace org.apache.reef.bridge.message
         /// Initializes a new instance of the <see cref="SetupBridge"/> class.
         /// </summary>
         /// <param name="httpServerPortNumber">The httpServerPortNumber.</param>
-        public SetupBridge(int httpServerPortNumber)
+        public SetupBridge(string httpServerPortNumber)
         {
             this.httpServerPortNumber = httpServerPortNumber;
         }

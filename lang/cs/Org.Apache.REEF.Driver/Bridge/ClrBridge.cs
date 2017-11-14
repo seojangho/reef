@@ -30,7 +30,9 @@ namespace Org.Apache.REEF.Driver.Bridge
     /// the Java to C# Avro protocol coming from the Java bridge which invokes
     /// the appropriate target method in the C# side of the driver.
     /// </summary>
-    internal sealed class ClrBridge : IObserver<IMessageInstance<SystemOnStart>>
+    internal sealed class ClrBridge :
+        IObserver<IMessageInstance<SystemOnStart>>, 
+        IObserver<IMessageInstance<SetupBridge>>
     {
         private static readonly Logger Logger = Logger.GetLogger(typeof(ClrBridge));
         private static long identifierSource = 0;
