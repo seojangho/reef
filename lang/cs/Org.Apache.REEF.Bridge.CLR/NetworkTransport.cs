@@ -28,7 +28,7 @@ using Org.Apache.REEF.Wake.Avro;
 using Org.Apache.REEF.Wake.Remote;
 using Org.Apache.REEF.Wake.Remote.Impl;
 
-namespace Org.Apache.REEF.Bridge
+namespace Org.Apache.REEF.Bridge.CLR
 {
     /// <summary>
     /// The CLR Bridge Network class aggregates a RemoteManager and
@@ -39,13 +39,14 @@ namespace Org.Apache.REEF.Bridge
     {
         private static readonly Logger Logger = Logger.GetLogger(typeof(NetworkTransport));
 
-        private readonly BlockingCollection<Tuple<long, object>> _sendQueue = new BlockingCollection<Tuple<long, object>>();
-        private CancellationTokenSource _tokenSource;
-        private CancellationToken _cancelToken;
-        private Thread _writer;
+        private readonly BlockingCollection<Tuple<long, object>>
+            _sendQueue = new BlockingCollection<Tuple<long, object>>();
+
+        private readonly CancellationTokenSource _tokenSource = new CancellationTokenSource();
+        private readonly CancellationToken _cancelToken;
+        private readonly Thread _writer;
 
         private readonly ProtocolSerializer _serializer;
-        private readonly IRemoteManager<byte[]> _remoteManager;
         private readonly IObserver<byte[]> _remoteObserver;
         private readonly REEFFileNames _fileNames;
 
@@ -58,7 +59,7 @@ namespace Org.Apache.REEF.Bridge
         /// <param name="localObserver">Handler of the incoming bridge messages.</param>
         /// <param name="remoteManagerFactory">RemoteManager factory.
         /// We need a new instance of the RM to communicate with the Java side of the bridge.</param>
-        /// <param name="filenames">Collection of global constants for file paths and such.</param>
+        /// <param name="fileNames">Collection of global constants for file paths and such.</param>
         [Inject]
         private NetworkTransport(
             ILocalAddressProvider localAddressProvider,
@@ -71,19 +72,19 @@ namespace Org.Apache.REEF.Bridge
             _fileNames = fileNames;
 
             // Instantiate the remote manager.
-            _remoteManager = remoteManagerFactory.GetInstance(localAddressProvider.LocalAddress, new ByteCodec());
+            IRemoteManager<byte[]> remoteManager =
+                remoteManagerFactory.GetInstance(localAddressProvider.LocalAddress, new ByteCodec());
 
             // Listen to the java bridge on the local end point.
-            _remoteManager.RegisterObserver(localObserver);
-            Logger.Log(Level.Info, "Local observer listening to java bridge on: [{0}]", _remoteManager.LocalEndpoint);
+            remoteManager.RegisterObserver(localObserver);
+            Logger.Log(Level.Info, "Local observer listening to java bridge on: [{0}]", remoteManager.LocalEndpoint);
 
             // Instantiate a remote observer to send messages to the java bridge.
             IPEndPoint javaIpEndPoint = GetJavaBridgeEndpoint();
             Logger.Log(Level.Info, "Connecting to java bridge on: [{0}]", javaIpEndPoint);
-            _remoteObserver = _remoteManager.GetRemoteObserver(javaIpEndPoint);
+            _remoteObserver = remoteManager.GetRemoteObserver(javaIpEndPoint);
 
             // Initialize and start the message writer thread.
-            _tokenSource = new CancellationTokenSource();
             _cancelToken = _tokenSource.Token;
             _writer = new Thread(WriteMessage);
             _writer.Start();
@@ -99,7 +100,7 @@ namespace Org.Apache.REEF.Bridge
         /// <param name="message">An object reference to a message in the org.apache.reef.bridge.message package.</param>
         public void Send(long identifier, object message)
         {
-            Logger.Log(Level.Verbose, "Sending message: {0}", message);
+            Logger.Log(Level.Verbose, "Sending message: {0} :: {1}", identifier, message);
             _sendQueue.Add(new Tuple<long, object>(identifier, message));
         }
 
@@ -109,19 +110,14 @@ namespace Org.Apache.REEF.Bridge
         /// <returns>IP address and port of the Java bridge.</returns>
         private IPEndPoint GetJavaBridgeEndpoint()
         {
-            using (FileStream stream = File.Open(_fileNames.DriverJavaBridgeEndpointFileName, FileMode.Open))
-            {
-                using (StreamReader reader = new StreamReader(stream))
-                {
-                    string javaBridgeAddress = reader.ReadToEnd();
-                    Logger.Log(Level.Info, "Java bridge address: {0}", javaBridgeAddress);
+            string javaBridgeAddress = File.ReadAllText(_fileNames.DriverJavaBridgeEndpointFileName);
+            Logger.Log(Level.Info, "Java bridge address: {0}", javaBridgeAddress);
 
-                    string[] javaAddressStrs = javaBridgeAddress.Split(':');
-                    IPAddress javaBridgeIpAddress = IPAddress.Parse(javaAddressStrs[0]);
-                    int port = int.Parse(javaAddressStrs[1]);
-                    return new IPEndPoint(javaBridgeIpAddress, port);
-                }
-            }
+            string[] javaAddressStrs = javaBridgeAddress.Split(':');
+            IPAddress javaBridgeIpAddress = IPAddress.Parse(javaAddressStrs[0]);
+            int port = int.Parse(javaAddressStrs[1]);
+
+            return new IPEndPoint(javaBridgeIpAddress, port);
         }
 
         /// <summary>
@@ -137,7 +133,7 @@ namespace Org.Apache.REEF.Bridge
             }
             catch (Exception e)
             {
-                Logger.Log(Level.Info, "Disposing of writer thread: ", e);
+                Logger.Log(Level.Error, "Disposing of writer thread", e);
             }
         }
 
@@ -146,10 +142,9 @@ namespace Org.Apache.REEF.Bridge
         /// </summary>
         void WriteMessage()
         {
-            Tuple<long, object> item;
             while (!_cancelToken.IsCancellationRequested)
             {
-                item = _sendQueue.Take(_cancelToken);
+                var item = _sendQueue.Take(_cancelToken);
                 _remoteObserver.OnNext(_serializer.Write(item.Item2, item.Item1));
             }
         }

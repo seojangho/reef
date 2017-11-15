@@ -16,7 +16,7 @@
 // under the License.
 
 using System;
-using Org.Apache.REEF.Bridge;
+using Org.Apache.REEF.Bridge.CLR;
 using org.apache.reef.bridge.message;
 using Org.Apache.REEF.Tang.Annotations;
 using Org.Apache.REEF.Utilities.Logging;

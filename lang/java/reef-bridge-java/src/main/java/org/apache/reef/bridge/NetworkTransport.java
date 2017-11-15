@@ -56,7 +56,7 @@ public final class NetworkTransport {
 
   /**
    * Sends and receives messages between the java bridge and C# bridge.
-   * @param observer A multiobserver instance that will receive all incoming messages.
+   * @param observer A MultiObserver instance that will receive all incoming messages.
    */
   @Inject
   private NetworkTransport(
@@ -103,7 +103,7 @@ public final class NetworkTransport {
 
   /**
    * Provides the IP address and port of the java bridge network.
-   * @return A InetSockerAddress that contains the ip and port of the bridge network.
+   * @return An InetSocketAddress that contains the ip and port of the bridge network.
    */
   public InetSocketAddress getAddress() {
     return inetSocketAddress;
