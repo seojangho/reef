@@ -19,7 +19,6 @@ using System;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using Org.Apache.REEF.Common.Context;
-using Org.Apache.REEF.Bridge.CLR;
 using Org.Apache.REEF.Driver.Bridge.Clr2java;
 using Org.Apache.REEF.Driver.Bridge.Events;
 using Org.Apache.REEF.Driver.Context;

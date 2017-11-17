@@ -28,7 +28,7 @@ using Org.Apache.REEF.Wake.Avro;
 using Org.Apache.REEF.Wake.Remote;
 using Org.Apache.REEF.Wake.Remote.Impl;
 
-namespace Org.Apache.REEF.Bridge.CLR
+namespace Org.Apache.REEF.Bridge
 {
     /// <summary>
     /// The CLR Bridge Network class aggregates a RemoteManager and
