@@ -115,7 +115,7 @@ public final class NetworkTransport {
   private final class LocalObserver implements EventHandler<RemoteMessage<byte[]>> {
 
     /**
-     * Deserialize and direct incoming messages to the registered MuiltiObserver event handler.
+     * Deserialize and direct incoming messages to the registered MultiObserver event handler.
      * @param message A RemoteMessage<byte[]> object which will be deserialized.
      */
     @Override

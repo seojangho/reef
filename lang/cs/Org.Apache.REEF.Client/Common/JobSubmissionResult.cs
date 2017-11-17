@@ -40,9 +40,11 @@ namespace Org.Apache.REEF.Client.Common
     internal abstract class JobSubmissionResult : IJobSubmissionResult
     {
         private static readonly Logger LOGGER = Logger.GetLogger(typeof(JobSubmissionResult));
+
         private const int MaxConnectAttemptCount = 20;
         private const int MilliSecondsToWaitBeforeNextConnectAttempt = 1000;
         private const int SecondsForHttpClientTimeout = 120;
+
         private const string UnAssigned = "UNASSIGNED";
         private const string TrackingUrlKey = "trackingUrl";
         private const string AppKey = "app";
@@ -144,7 +146,9 @@ namespace Org.Apache.REEF.Client.Common
         {
             string statusUrl = DriverUrl + "driverstatus/v1";
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(statusUrl);
-            using (StreamReader reader = new StreamReader(request.GetResponse().GetResponseStream()))
+            LOGGER.Log(Level.Verbose, "Get driver status at: {0}", statusUrl);
+
+            using (var reader = new StreamReader(request.GetResponse().GetResponseStream()))
             {
                 string statusString = reader.ReadToEnd();
                 LOGGER.Log(Level.Verbose, "Status received: {0}", statusString);
@@ -159,7 +163,8 @@ namespace Org.Apache.REEF.Client.Common
         private DriverStatus FetchFirstDriverStatus()
         {
             var policy = new RetryPolicy<AllErrorsTransientStrategy>(_numberOfRetries, _retryInterval);
-            return policy.ExecuteAction<DriverStatus>(FetchDriverStatus);
+            LOGGER.Log(Level.Verbose, "Attempt to fetch driver status: {0}", policy);
+            return policy.ExecuteAction(FetchDriverStatus);
         }
 
         protected abstract string GetDriverUrl(string filepath);
