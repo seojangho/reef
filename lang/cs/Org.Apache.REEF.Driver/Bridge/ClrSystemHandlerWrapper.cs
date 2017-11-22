@@ -31,7 +31,7 @@ using ContextMessage = Org.Apache.REEF.Driver.Bridge.Events.ContextMessage;
 using Org.Apache.REEF.Tang.Implementations.Tang;
 using Org.Apache.REEF.Tang.Interface;
 using Org.Apache.REEF.Tang.Util;
-using Org.Apache.REEF.Bridge;
+using Org.Apache.REEF.Bridge.CLR;
 using Org.Apache.REEF.Wake.Avro;
 
 namespace Org.Apache.REEF.Driver.Bridge

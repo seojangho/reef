@@ -22,7 +22,7 @@ using Org.Apache.REEF.Utilities.Logging;
 using Org.Apache.REEF.Wake.Avro;
 using Org.Apache.REEF.Wake.Remote;
 
-namespace Org.Apache.REEF.Bridge
+namespace Org.Apache.REEF.Bridge.CLR
 {
     /// <summary>
     /// The Local Observer class receives byte buffer messages from the transport layer,
@@ -32,7 +32,7 @@ namespace Org.Apache.REEF.Bridge
     public sealed class LocalObserver : IObserver<IRemoteMessage<byte[]>>
     {
         /// <summary>
-        /// Specify the class that will be called to process deserialied Avro messages.
+        /// Specify the class that will be called to process deserialized Avro messages.
         /// </summary>
         [NamedParameter(Documentation =
             "Must implement IObserver<IMessageInstance<TMessage>> for messages to be received.")]

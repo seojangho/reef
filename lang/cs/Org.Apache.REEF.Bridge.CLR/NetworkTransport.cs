@@ -28,7 +28,7 @@ using Org.Apache.REEF.Wake.Avro;
 using Org.Apache.REEF.Wake.Remote;
 using Org.Apache.REEF.Wake.Remote.Impl;
 
-namespace Org.Apache.REEF.Bridge
+namespace Org.Apache.REEF.Bridge.CLR
 {
     /// <summary>
     /// The CLR Bridge Network class aggregates a RemoteManager and
@@ -77,11 +77,11 @@ namespace Org.Apache.REEF.Bridge
 
             // Listen to the java bridge on the local end point.
             remoteManager.RegisterObserver(localObserver);
-            Logger.Log(Level.Info, "Local observer listening to java bridge on: [{0}]", remoteManager.LocalEndpoint);
+            Logger.Log(Level.Info, "Local observer listening to java bridge on: {0}", remoteManager.LocalEndpoint);
 
             // Instantiate a remote observer to send messages to the java bridge.
             IPEndPoint javaIpEndPoint = GetJavaBridgeEndpoint();
-            Logger.Log(Level.Info, "Connecting to java bridge on: [{0}]", javaIpEndPoint);
+            Logger.Log(Level.Info, "Connecting to java bridge on: {0}", javaIpEndPoint);
             _remoteObserver = remoteManager.GetRemoteObserver(javaIpEndPoint);
 
             // Initialize and start the message writer thread.
