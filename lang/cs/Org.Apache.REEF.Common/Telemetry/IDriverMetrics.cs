@@ -21,18 +21,24 @@ using Org.Apache.REEF.Utilities.Attributes;
 
 namespace Org.Apache.REEF.Common.Telemetry
 {
-    [Unstable("0.16", "This is to build a simple metrics with system state only. More metrics will be added in future.")]
     [DefaultImplementation(typeof(DriverMetrics))]
     public interface IDriverMetrics
     {
         /// <summary>
-        /// System state
+        /// Method that returns the collection of metric data.
         /// </summary>
-        string SystemState { get; }
+        /// <returns></returns>
+        IMetrics GetMetricsData();
 
         /// <summary>
-        /// DateTime that the system state is updated
+        /// Extracts the metric object if it has been registered.
         /// </summary>
-        DateTime TimeUpdated { get; }
+        /// <param name="name">Name of the metric.</param>
+        /// <param name="me">The registered metric. null if not found.</param>
+        /// <returns></returns>
+        bool TryGetMetric(string name, out IMetric me);
+
+        T CreateAndRegisterMetric<T>(string name, string description, bool keepUpateHistory)
+            where T : MetricBase, new();
     }
 }

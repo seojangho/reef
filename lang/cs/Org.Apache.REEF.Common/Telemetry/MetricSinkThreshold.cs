@@ -15,18 +15,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-using System;
-using System.Collections.Generic;
 using Org.Apache.REEF.Tang.Annotations;
 
 namespace Org.Apache.REEF.Common.Telemetry
 {
-    /// <summary>
-    /// Interface for metrics sink.
-    /// </summary>
-    [DefaultImplementation(typeof(DefaultMetricsSink))]
-    public interface IMetricsSink : IDisposable
+    [NamedParameter(Documentation = "Threshold to trigger the sink.", ShortName = "MetricSinkThreshold", DefaultValue = "1")]
+    public class MetricSinkThreshold : Name<int>
     {
-        void Sink(IEnumerable<KeyValuePair<string, MetricTracker.MetricRecord>> metrics);
     }
 }

@@ -15,18 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-using System;
-using System.Collections.Generic;
-using Org.Apache.REEF.Tang.Annotations;
-
 namespace Org.Apache.REEF.Common.Telemetry
 {
     /// <summary>
-    /// Interface for metrics sink.
+    /// Tracker interface to track metrics.
     /// </summary>
-    [DefaultImplementation(typeof(DefaultMetricsSink))]
-    public interface IMetricsSink : IDisposable
+    public interface ITracker
     {
-        void Sink(IEnumerable<KeyValuePair<string, MetricTracker.MetricRecord>> metrics);
+        void Track(object value);
     }
 }

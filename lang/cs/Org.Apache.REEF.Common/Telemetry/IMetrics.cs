@@ -17,42 +17,45 @@
 
 using System.Collections.Generic;
 using Org.Apache.REEF.Tang.Annotations;
-using Org.Apache.REEF.Utilities.Attributes;
 
 namespace Org.Apache.REEF.Common.Telemetry
 {
-    [DefaultImplementation(typeof(EvaluatorMetrics))]
-    public interface IEvaluatorMetrics
+    /// <summary>
+    /// Interface for a collection of metrics.
+    /// </summary>
+    [DefaultImplementation(typeof(MetricsData))]
+    public interface IMetrics
     {
         /// <summary>
-        /// Creates an evaluator metric.
+        /// Add a metric object to this collection.
         /// </summary>
-        /// <typeparam name="T">Type of the metric object.</typeparam>
-        /// <param name="name">Name of the metric.</param>
-        /// <param name="description">Description of the metric.</param>
-        /// <param name="keepUpdateHistory">whether to keep a history of updates on this metric.</param>
-        /// <returns></returns>
-        T CreateAndRegisterMetric<T>(string name, string description, bool keepUpdateHistory)
-            where T : MetricBase, new();
+        /// <param name="me">The metric object to add.</param>
+        void RegisterMetric(IMetric me);
 
         /// <summary>
-        /// Method that returns the collection of metric data.
+        /// Get metric value given the metric name.
         /// </summary>
-        /// <returns></returns>
-        IMetrics GetMetricsData();
+        /// <param name="name">Name of the metric</param>
+        /// <param name="metric">The metric object returned</param>
+        /// <returns>Returns a boolean to indicate if the value is found.</returns>
+        bool TryGetMetric(string name, out IMetric metric);
 
         /// <summary>
-        /// Extracts the metric object if it has been registered.
+        /// Returns all the metric trackers.
         /// </summary>
-        /// <param name="name">Name of the metric.</param>
-        /// <param name="me">The registered metric. null if not found.</param>
         /// <returns></returns>
-        bool TryGetMetric(string name, out IMetric me);
+        IEnumerable<MetricTracker> GetMetricTrackers();
 
         /// <summary>
-        /// Serializes the metrics data into a string.
+        /// Empties the cached records for each metric.
         /// </summary>
-        /// <returns>Returns serialized string of metrics</returns>
+        /// <returns>Key Value pair of metric name and record.</returns>
+        IEnumerable<KeyValuePair<string, MetricTracker.MetricRecord>> FlushMetricRecords();
+
+        /// <summary>
+        /// Serializes the metrics data.
+        /// </summary>
+        /// <returns>Serialized string.</returns>
         string Serialize();
     }
 }

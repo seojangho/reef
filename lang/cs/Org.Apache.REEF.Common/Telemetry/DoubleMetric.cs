@@ -5,9 +5,9 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
-//
+// 
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -15,12 +15,36 @@
 // specific language governing permissions and limitations
 // under the License.
 
-using Org.Apache.REEF.Tang.Annotations;
+using System;
+using System.Threading;
+using Newtonsoft.Json;
 
 namespace Org.Apache.REEF.Common.Telemetry
 {
-    [NamedParameter(Documentation = "Threshold to trigger the sink.", ShortName = "CounterSinkThreshold", DefaultValue = "1")]
-    public class CounterSinkThreshold : Name<int>
+    /// <summary>
+    /// Double metric implementation.
+    /// </summary>
+    public class DoubleMetric : MetricBase<double>
     {
+        public DoubleMetric() : base()
+        {
+        }
+
+        internal DoubleMetric(string name, string description, bool keepUpdateHistory = true)
+            : base(name, description, keepUpdateHistory)
+        {
+        }
+
+        [JsonConstructor]
+        internal DoubleMetric(string name, string description, double value, bool keepUpdateHistory)
+            : base(name, description, value, keepUpdateHistory)
+        {
+        }
+
+        public override void AssignNewValue(double val)
+        {
+            Interlocked.Exchange(ref _typedValue, val);
+            _tracker.Track(val);
+        }
     }
 }

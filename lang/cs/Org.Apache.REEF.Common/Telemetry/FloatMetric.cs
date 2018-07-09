@@ -16,17 +16,35 @@
 // under the License.
 
 using System;
-using System.Collections.Generic;
-using Org.Apache.REEF.Tang.Annotations;
+using System.Threading;
+using Newtonsoft.Json;
 
 namespace Org.Apache.REEF.Common.Telemetry
 {
     /// <summary>
-    /// Interface for metrics sink.
+    /// Float Metric implementation.
     /// </summary>
-    [DefaultImplementation(typeof(DefaultMetricsSink))]
-    public interface IMetricsSink : IDisposable
+    public class FloatMetric : MetricBase<float>
     {
-        void Sink(IEnumerable<KeyValuePair<string, MetricTracker.MetricRecord>> metrics);
+        public FloatMetric() : base()
+        {
+        }
+
+        internal FloatMetric(string name, string description, bool keepUpdateHistory = true)
+            : base(name, description, keepUpdateHistory)
+        {
+        }
+
+        [JsonConstructor]
+        internal FloatMetric(string name, string description, float value, bool keepUpdateHistory)
+            : base(name, description, value, keepUpdateHistory)
+        {
+        }
+
+        public override void AssignNewValue(float val)
+        {
+            Interlocked.Exchange(ref _typedValue, val);
+            _tracker.Track(val);
+        }
     }
 }

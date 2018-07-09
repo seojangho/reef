@@ -30,6 +30,7 @@ using Org.Apache.REEF.Tang.Implementations.Configuration;
 using Org.Apache.REEF.Tang.Util;
 using Org.Apache.REEF.Tests.Functional.Messaging;
 using Org.Apache.REEF.Utilities.Logging;
+using StringMetric = Org.Apache.REEF.Common.Telemetry.MetricClass<string>;
 
 namespace Org.Apache.REEF.Tests.Functional.Telemetry
 {
@@ -45,6 +46,8 @@ namespace Org.Apache.REEF.Tests.Functional.Telemetry
         private static readonly Logger Logger = Logger.GetLogger(typeof(MessageDriver));
         private readonly IEvaluatorRequestor _evaluatorRequestor;
         internal const string EventPrefix = "TestState";
+
+        private IDriverMetrics _driverMetrics;
 
         /// <summary>
         /// a set of driver metrics observers.
@@ -67,6 +70,7 @@ namespace Org.Apache.REEF.Tests.Functional.Telemetry
 
         public void OnNext(IDriverStarted value)
         {
+            _driverMetrics = new DriverMetrics();
             UpdateMetrics(TestSystemState.DriverStarted);
 
             var request =
@@ -135,11 +139,12 @@ namespace Org.Apache.REEF.Tests.Functional.Telemetry
         /// </summary>
         private void UpdateMetrics(TestSystemState systemState)
         {
-            var driverMetrics = new DriverMetrics(EventPrefix + systemState, DateTime.Now);
+            _driverMetrics.TryGetMetric(DriverMetrics.DriverStateMetric, out IMetric stateMetric);
+            ((StringMetric)stateMetric).AssignNewValue(EventPrefix + systemState.ToString());
 
             foreach (var metricsObserver in _driverMetricsObservers)
             {
-                metricsObserver.OnNext(driverMetrics);
+                metricsObserver.OnNext(_driverMetrics);
             }
         }
     }

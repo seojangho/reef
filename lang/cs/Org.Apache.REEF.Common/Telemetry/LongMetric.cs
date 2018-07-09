@@ -5,9 +5,9 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
-//
+// 
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,17 +16,35 @@
 // under the License.
 
 using System;
-using System.Collections.Generic;
-using Org.Apache.REEF.Tang.Annotations;
+using System.Threading;
+using Newtonsoft.Json;
 
 namespace Org.Apache.REEF.Common.Telemetry
 {
     /// <summary>
-    /// Interface for metrics sink.
+    /// Long metric implementation.
     /// </summary>
-    [DefaultImplementation(typeof(DefaultMetricsSink))]
-    public interface IMetricsSink : IDisposable
+    public class LongMetric : MetricBase<long>
     {
-        void Sink(IEnumerable<KeyValuePair<string, MetricTracker.MetricRecord>> metrics);
+        public LongMetric() : base()
+        {
+        }
+
+        internal LongMetric(string name, string description, bool keepHistory = true)
+            : base(name, description, keepHistory)
+        {
+        }
+
+        [JsonConstructor]
+        internal LongMetric(string name, string description, long value, bool keepUpdateHistory)
+            : base(name, description, value, keepUpdateHistory)
+        {
+        }
+
+        public override void AssignNewValue(long val)
+        {
+            Interlocked.Exchange(ref _typedValue, val);
+            _tracker.Track(val);
+        }
     }
 }

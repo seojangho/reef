@@ -15,25 +15,47 @@
 // specific language governing permissions and limitations
 // under the License.
 
-using System;
+using StringMetric = Org.Apache.REEF.Common.Telemetry.MetricClass<string>;
 
 namespace Org.Apache.REEF.Common.Telemetry
 {
     /// <summary>
-    /// A simple driver metrics.
-    /// It contains system state for now.
-    /// It can be extended later to include more driver metrics data.
+    /// Driver metrics implementation that contains the system state.
     /// </summary>
     public sealed class DriverMetrics : IDriverMetrics
     {
-        public DriverMetrics(string systemState, DateTime timeUpdated)
+        private MetricsData _metricsData;
+        public static string DriverStateMetric = "DriverState";
+
+        public DriverMetrics()
         {
-            SystemState = systemState;
-            TimeUpdated = timeUpdated;
+            _metricsData = new MetricsData();
+            var stateMetric = CreateAndRegisterMetric<StringMetric>(DriverStateMetric, "driver state.", false);
         }
 
-        public string SystemState { get; private set; }
+        public IMetrics GetMetricsData()
+        {
+            return _metricsData;
+        }
 
-        public DateTime TimeUpdated { get; private set; }
+        public T CreateAndRegisterMetric<T>(string name, string description, bool keepUpdateHistory) 
+            where T : MetricBase, new()
+        {
+            var metric = new T
+            {
+                Name = name,
+                Description = description,
+                KeepUpdateHistory = keepUpdateHistory
+            };
+            _metricsData.RegisterMetric(metric);
+            return metric;
+        }
+
+        public bool TryGetMetric(string name, out IMetric metric)
+        {
+            var ret = _metricsData.TryGetMetric(name, out IMetric me);
+            metric = me;
+            return ret;
+        }
     }
 }
