@@ -20,7 +20,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using Newtonsoft.Json;
-using Org.Apache.REEF.Utilities.Logging;
 
 namespace Org.Apache.REEF.Common.Telemetry
 {
@@ -95,8 +94,6 @@ namespace Org.Apache.REEF.Common.Telemetry
     [JsonObject]
     public sealed class MetricTracker<T> : MetricTracker, ITracker<T>
     {
-        private static readonly Logger Logger = Logger.GetLogger(typeof(MetricTracker<T>));
-
         [JsonProperty]
         private IMetric<T> Metric;
 
@@ -163,16 +160,8 @@ namespace Org.Apache.REEF.Common.Telemetry
         }
 
         /// <summary>
-        /// Get the metric with its most recent value.
-        /// </summary>
-        /// <returns></returns>
-        internal IMetric<T> GetMetricTyped()
-        {
-            return Metric;
-        }
-
-        /// <summary>
-        /// If KeepUpdateHistory is true, it will return all the records; otherwise, it will returen one record with the most recent value.
+        /// If KeepUpdateHistory is true, it will return all the records;
+        /// otherwise, it will returen one record with the most recent value.
         /// </summary>
         /// <returns>The history of the metric records.</returns>
         internal override IEnumerable<MetricRecord> GetMetricRecords()

@@ -31,7 +31,8 @@ namespace Org.Apache.REEF.Common.Telemetry
     /// </summary>
     public sealed class MetricsData : IMetrics
     {
-        JsonSerializerSettings settings = new JsonSerializerSettings()
+        private static readonly JsonSerializerSettings JsonSettings =
+            new JsonSerializerSettings()
         {
             TypeNameHandling = TypeNameHandling.All
         };
@@ -54,7 +55,8 @@ namespace Org.Apache.REEF.Common.Telemetry
         [JsonConstructor]
         internal MetricsData(string serializedMetricsString)
         {
-            var metrics = JsonConvert.DeserializeObject<IList<MetricTracker>>(serializedMetricsString, settings);
+            var metrics = JsonConvert.DeserializeObject<IList<MetricTracker>>(
+                serializedMetricsString, JsonSettings);
 
             foreach (var m in metrics)
             {
@@ -70,14 +72,14 @@ namespace Org.Apache.REEF.Common.Telemetry
             }
         }
 
-        public bool TryGetMetric(string name, out IMetric me)
+        public bool TryGetMetric(string name, out IMetric metric)
         {
             if (!_metricsMap.TryGetValue(name, out MetricTracker tracker))
             {
-                me = null;
+                metric = null;
                 return false;
             }
-            me = tracker.GetMetric();
+            metric = tracker.GetMetric();
             return true;
         }
 
@@ -108,7 +110,8 @@ namespace Org.Apache.REEF.Common.Telemetry
         {
             foreach (var tracker in metrics.GetMetricTrackers())
             {
-                _metricsMap.AddOrUpdate(tracker.GetMetric().Name, tracker, (k, v) => v.UpdateMetric(tracker));
+                _metricsMap.AddOrUpdate(
+                    tracker.GetMetric().Name, tracker, (_, v) => v.UpdateMetric(tracker));
             }
         }
 
@@ -119,7 +122,8 @@ namespace Org.Apache.REEF.Common.Telemetry
         /// <returns>Queue of trackers containing metric records.</returns>
         internal IEnumerable<MetricTracker> FlushMetricTrackers()
         {
-            return new ConcurrentQueue<MetricTracker>(_metricsMap.Values.Select(metric => metric.Copy()));
+            return new ConcurrentQueue<MetricTracker>(
+                _metricsMap.Values.Select(metric => metric.Copy()));
         }
 
         /// <summary>
@@ -138,7 +142,8 @@ namespace Org.Apache.REEF.Common.Telemetry
 
         internal string Serialize(IEnumerable<MetricTracker> trackers)
         {
-            return JsonConvert.SerializeObject(trackers.Where(me => me.ChangesSinceLastSink > 0).ToList(), settings);
+            return JsonConvert.SerializeObject(
+                trackers.Where(me => me.ChangesSinceLastSink > 0).ToList(), JsonSettings);
         }
 
         internal string SerializeAndReset()
