@@ -30,7 +30,7 @@ namespace Org.Apache.REEF.Common.Telemetry
         /// Add a metric object to this collection.
         /// </summary>
         /// <param name="me">The metric object to add.</param>
-        void RegisterMetric(IMetric me);
+        void RegisterMetric<T>(IMetric<T> me);
 
         /// <summary>
         /// Get metric value given the metric name.
@@ -50,7 +50,7 @@ namespace Org.Apache.REEF.Common.Telemetry
         /// Empties the cached records for each metric.
         /// </summary>
         /// <returns>Key Value pair of metric name and record.</returns>
-        IEnumerable<KeyValuePair<string, MetricTracker.MetricRecord>> FlushMetricRecords();
+        IEnumerable<KeyValuePair<string, MetricRecord>> FlushMetricRecords();
 
         /// <summary>
         /// Serializes the metrics data.

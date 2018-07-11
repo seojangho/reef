@@ -27,6 +27,6 @@ namespace Org.Apache.REEF.Common.Telemetry
     [DefaultImplementation(typeof(DefaultMetricsSink))]
     public interface IMetricsSink : IDisposable
     {
-        void Sink(IEnumerable<KeyValuePair<string, MetricTracker.MetricRecord>> metrics);
+        void Sink(IEnumerable<KeyValuePair<string, MetricRecord>> metrics);
     }
 }

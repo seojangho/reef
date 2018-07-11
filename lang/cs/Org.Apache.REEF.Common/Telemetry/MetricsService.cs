@@ -87,7 +87,7 @@ namespace Org.Apache.REEF.Common.Telemetry
         /// <summary>
         /// Call each Sink to process the cached metric records.
         /// </summary>
-        private void Sink(IEnumerable<KeyValuePair<string, MetricTracker.MetricRecord>> metricRecords)
+        private void Sink(IEnumerable<KeyValuePair<string, MetricRecord>> metricRecords)
         {
             foreach (var s in _metricsSinks)
             {

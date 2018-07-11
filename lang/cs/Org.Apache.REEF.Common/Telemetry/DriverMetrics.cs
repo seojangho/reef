@@ -30,7 +30,8 @@ namespace Org.Apache.REEF.Common.Telemetry
         public DriverMetrics()
         {
             _metricsData = new MetricsData();
-            var stateMetric = CreateAndRegisterMetric<StringMetric>(DriverStateMetric, "driver state.", false);
+            var stateMetric = CreateAndRegisterMetric<StringMetric, string>(
+                DriverStateMetric, "driver state.", false);
         }
 
         public IMetrics GetMetricsData()
@@ -38,8 +39,9 @@ namespace Org.Apache.REEF.Common.Telemetry
             return _metricsData;
         }
 
-        public T CreateAndRegisterMetric<T>(string name, string description, bool keepUpdateHistory) 
-            where T : MetricBase, new()
+        public T CreateAndRegisterMetric<T, U>(
+            string name, string description, bool keepUpdateHistory)
+            where T : MetricBase<U>, new()
         {
             var metric = new T
             {

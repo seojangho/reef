@@ -15,9 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-using System;
 using Org.Apache.REEF.Tang.Annotations;
-using Org.Apache.REEF.Utilities.Attributes;
 
 namespace Org.Apache.REEF.Common.Telemetry
 {
@@ -38,7 +36,7 @@ namespace Org.Apache.REEF.Common.Telemetry
         /// <returns></returns>
         bool TryGetMetric(string name, out IMetric me);
 
-        T CreateAndRegisterMetric<T>(string name, string description, bool keepUpateHistory)
-            where T : MetricBase, new();
+        T CreateAndRegisterMetric<T, U>(string name, string description, bool keepUpateHistory)
+            where T : MetricBase<U>, new();
     }
 }

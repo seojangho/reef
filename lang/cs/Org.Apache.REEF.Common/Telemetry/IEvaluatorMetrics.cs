@@ -15,9 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-using System.Collections.Generic;
 using Org.Apache.REEF.Tang.Annotations;
-using Org.Apache.REEF.Utilities.Attributes;
 
 namespace Org.Apache.REEF.Common.Telemetry
 {
@@ -32,8 +30,8 @@ namespace Org.Apache.REEF.Common.Telemetry
         /// <param name="description">Description of the metric.</param>
         /// <param name="keepUpdateHistory">whether to keep a history of updates on this metric.</param>
         /// <returns></returns>
-        T CreateAndRegisterMetric<T>(string name, string description, bool keepUpdateHistory)
-            where T : MetricBase, new();
+        T CreateAndRegisterMetric<T, U>(string name, string description, bool keepUpdateHistory)
+            where T : MetricBase<U>, new();
 
         /// <summary>
         /// Method that returns the collection of metric data.

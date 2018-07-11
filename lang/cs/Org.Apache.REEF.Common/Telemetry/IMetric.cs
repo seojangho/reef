@@ -43,12 +43,20 @@ namespace Org.Apache.REEF.Common.Telemetry
         /// Flag for the immutability of the metric. 
         /// </summary>
         bool KeepUpdateHistory { get; }
+    }
+
+    public interface IMetric<T> : IMetric
+    {
+        /// <summary>
+        /// Value of the metric.
+        /// </summary>
+        T Value { get; }
 
         /// <summary>
         /// Assign a tracker to track the metric.
         /// </summary>
         /// <param name="tracker">The metric tracker assigned to track updates.</param>
         /// <returns></returns>
-        IDisposable Subscribe(ITracker tracker);
+        IDisposable Subscribe(ITracker<T> tracker);
     }
 }

@@ -44,8 +44,8 @@ namespace Org.Apache.REEF.Common.Telemetry
             _metricsData = new MetricsData(serializedMsg);
         }
 
-        public T CreateAndRegisterMetric<T>(string name, string description, bool keepUpdateHistory)
-            where T : MetricBase, new()
+        public T CreateAndRegisterMetric<T, U>(string name, string description, bool keepUpdateHistory)
+            where T : MetricBase<U>, new()
         {
             var metric = new T
             {

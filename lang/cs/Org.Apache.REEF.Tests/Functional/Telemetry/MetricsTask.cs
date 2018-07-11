@@ -43,8 +43,8 @@ namespace Org.Apache.REEF.Tests.Functional.Telemetry
         private MetricsTask(IEvaluatorMetrics evaluatorMetrics)
         {
             _evaluatorMetrics = evaluatorMetrics;
-            metric1 = _evaluatorMetrics.CreateAndRegisterMetric<CounterMetric>(TestCounter, TestCounter + " description", false);
-            metric2 = _evaluatorMetrics.CreateAndRegisterMetric<IntegerMetric>(TestIntMetric, TestIntMetric + " description", true);
+            metric1 = _evaluatorMetrics.CreateAndRegisterMetric<CounterMetric, int>(TestCounter, TestCounter + " description", false);
+            metric2 = _evaluatorMetrics.CreateAndRegisterMetric<IntegerMetric, int>(TestIntMetric, TestIntMetric + " description", true);
         }
 
         public byte[] Call(byte[] memento)

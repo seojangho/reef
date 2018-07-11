@@ -5,9 +5,9 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -15,36 +15,45 @@
 // specific language governing permissions and limitations
 // under the License.
 
+using System;
 using System.Threading;
 using Newtonsoft.Json;
 
 namespace Org.Apache.REEF.Common.Telemetry
 {
-    /// <summary>
-    /// Metrics of reference types (such as strings) should inherit from this class.
-    /// </summary>
-    /// <typeparam name="T">The type of the metric should be of reference type.</typeparam>
-    public class MetricClass<T> : MetricBase<T> where T : class
+    [JsonObject]
+    public class MetricRecord
     {
-        public MetricClass() : base()
-        {
-        }
+        private object _value;
 
-        internal MetricClass(string name, string description, bool keepHistory = true)
-            : base(name, description, keepHistory)
+        [JsonProperty]
+        public object Value
         {
+            get
+            {
+                return _value;
+            }
         }
+        [JsonProperty]
+        public long Timestamp { get; }
 
         [JsonConstructor]
-        internal MetricClass(string name, string description, T value, bool keepUpdateHistory)
-            : base(name, description, value, keepUpdateHistory)
+        public MetricRecord(object value, long timestamp)
         {
+            _value = value;
+            Timestamp = timestamp;
         }
 
-        public override void AssignNewValue(T val)
+        public MetricRecord(IMetric metric)
         {
-            Interlocked.Exchange(ref _typedValue, val);
-            _tracker.Track(val);
+            Timestamp = DateTime.Now.Ticks;
+            Interlocked.Exchange(ref _value, metric.ValueUntyped);
+        }
+
+        public MetricRecord(object val)
+        {
+            _value = val;
+            Timestamp = DateTime.Now.Ticks;
         }
     }
 }

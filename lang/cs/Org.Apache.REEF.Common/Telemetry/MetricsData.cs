@@ -20,7 +20,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Org.Apache.REEF.Tang.Annotations;
-using Org.Apache.REEF.Utilities.Logging;
 using Newtonsoft.Json;
 
 namespace Org.Apache.REEF.Common.Telemetry
@@ -32,8 +31,6 @@ namespace Org.Apache.REEF.Common.Telemetry
     /// </summary>
     public sealed class MetricsData : IMetrics
     {
-        private static readonly Logger Logger = Logger.GetLogger(typeof(MetricsData));
-
         JsonSerializerSettings settings = new JsonSerializerSettings()
         {
             TypeNameHandling = TypeNameHandling.All
@@ -42,7 +39,8 @@ namespace Org.Apache.REEF.Common.Telemetry
         /// <summary>
         /// Registration of metrics
         /// </summary>
-        private readonly ConcurrentDictionary<string, MetricTracker> _metricsMap = new ConcurrentDictionary<string, MetricTracker>();
+        private readonly ConcurrentDictionary<string, MetricTracker> _metricsMap =
+            new ConcurrentDictionary<string, MetricTracker>();
 
         [Inject]
         internal MetricsData()
@@ -64,9 +62,9 @@ namespace Org.Apache.REEF.Common.Telemetry
             }
         }
 
-        public void RegisterMetric(IMetric metric)
+        public void RegisterMetric<T>(IMetric<T> metric)
         {
-            if (!_metricsMap.TryAdd(metric.Name, new MetricTracker(metric)))
+            if (!_metricsMap.TryAdd(metric.Name, new MetricTracker<T>(metric)))
             {
                 throw new ArgumentException("The metric [{0}] already exists.", metric.Name);
             }
@@ -93,10 +91,11 @@ namespace Org.Apache.REEF.Common.Telemetry
         /// Called when Driver is sinking metrics.
         /// </summary>
         /// <returns>Key value pairs of metric name and record that was flushed.</returns>
-        public IEnumerable<KeyValuePair<string, MetricTracker.MetricRecord>> FlushMetricRecords()
+        public IEnumerable<KeyValuePair<string, MetricRecord>> FlushMetricRecords()
         {
             // for each metric, flush the records and create key value pairs
-            return _metricsMap.SelectMany(kv => kv.Value.FlushChangesSinceLastSink().Select(r => new KeyValuePair<string, MetricTracker.MetricRecord>(kv.Key, r)));
+            return _metricsMap.SelectMany(kv => kv.Value.FlushChangesSinceLastSink().Select(
+                r => new KeyValuePair<string, MetricRecord>(kv.Key, r)));
         }
 
         /// <summary>
@@ -120,7 +119,7 @@ namespace Org.Apache.REEF.Common.Telemetry
         /// <returns>Queue of trackers containing metric records.</returns>
         internal IEnumerable<MetricTracker> FlushMetricTrackers()
         {
-            return new ConcurrentQueue<MetricTracker>(_metricsMap.Select(kv => new MetricTracker(kv.Value.GetMetric(), kv.Value.ChangesSinceLastSink, (ConcurrentQueue<MetricTracker.MetricRecord>)kv.Value.FlushChangesSinceLastSink(), kv.Value.KeepUpdateHistory)));
+            return new ConcurrentQueue<MetricTracker>(_metricsMap.Values.Select(metric => metric.Copy()));
         }
 
         /// <summary>

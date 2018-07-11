@@ -16,6 +16,7 @@
 // under the License.
 
 using System;
+using System.Linq;
 using Org.Apache.REEF.Common.Telemetry;
 using Org.Apache.REEF.Tang.Implementations.Tang;
 using Xunit;
@@ -25,13 +26,14 @@ namespace Org.Apache.REEF.Common.Tests.Telemetry
     public class MetricsTests
     {
         /// <summary>
-        /// Creates and registers a counter metric without tracking to the Evaluator metrics, alters the values, then serializes and deserializes.
+        /// Creates and registers a counter metric without tracking to the
+        /// Evaluator metrics, alters the values, then serializes and deserializes.
         /// </summary>
         [Fact]
         public void TestEvaluatorMetricsCountersOnly()
         {
             var evalMetrics1 = TangFactory.GetTang().NewInjector().GetInstance<IEvaluatorMetrics>();
-            var counter1 = evalMetrics1.CreateAndRegisterMetric<CounterMetric>("counter1", "Counter1 description", false);
+            var counter1 = evalMetrics1.CreateAndRegisterMetric<CounterMetric, int>("counter1", "Counter1 description", false);
             for (int i = 0; i < 5; i++)
             {
                 counter1.Increment();
@@ -41,7 +43,7 @@ namespace Org.Apache.REEF.Common.Tests.Telemetry
 
             foreach (var t in evalMetricsData.GetMetricTrackers())
             {
-                Assert.Equal(1, t.GetMetricRecords().Count);
+                Assert.Equal(1, t.GetMetricRecords().Count());
             }
 
             var metricsStr = evalMetrics1.Serialize();
@@ -56,8 +58,8 @@ namespace Org.Apache.REEF.Common.Tests.Telemetry
         public void TestMetricSetValue()
         {
             var evalMetrics = TangFactory.GetTang().NewInjector().GetInstance<IEvaluatorMetrics>();
-            var intMetric = evalMetrics.CreateAndRegisterMetric<IntegerMetric>("IntMetric", "metric of type int", true);
-            var doubleMetric = evalMetrics.CreateAndRegisterMetric<DoubleMetric>("DouMetric", "metric of type double", true);
+            var intMetric = evalMetrics.CreateAndRegisterMetric<IntegerMetric, int>("IntMetric", "metric of type int", true);
+            var doubleMetric = evalMetrics.CreateAndRegisterMetric<DoubleMetric, double>("DouMetric", "metric of type double", true);
 
             var evalMetricsData = evalMetrics.GetMetricsData();
             ValidateMetric(evalMetricsData, "IntMetric", default(int));
@@ -84,8 +86,8 @@ namespace Org.Apache.REEF.Common.Tests.Telemetry
         public void TestMetricsSimulateHeartbeat()
         {
             var evalMetrics1 = TangFactory.GetTang().NewInjector().GetInstance<IEvaluatorMetrics>();
-            evalMetrics1.CreateAndRegisterMetric<CounterMetric>("counter", "counter with no records", false);
-            evalMetrics1.CreateAndRegisterMetric<IntegerMetric>("iteration", "iteration with records", true);
+            evalMetrics1.CreateAndRegisterMetric<CounterMetric, int>("counter", "counter with no records", false);
+            evalMetrics1.CreateAndRegisterMetric<IntegerMetric, int>("iteration", "iteration with records", true);
             evalMetrics1.TryGetMetric("counter", out IMetric me1);
             evalMetrics1.TryGetMetric("iteration", out IMetric me2);
             var counter = (CounterMetric)me1;
@@ -105,7 +107,7 @@ namespace Org.Apache.REEF.Common.Tests.Telemetry
 
             foreach (var t in metricsData2.GetMetricTrackers())
             {
-                Assert.Equal(1, t.GetMetricRecords().Count);
+                Assert.Equal(1, t.GetMetricRecords().Count());
             }
         }
 

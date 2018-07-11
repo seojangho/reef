@@ -20,8 +20,8 @@ namespace Org.Apache.REEF.Common.Telemetry
     /// <summary>
     /// Tracker interface to track metrics.
     /// </summary>
-    public interface ITracker
+    public interface ITracker<in T>
     {
-        void Track(object value);
+        void Track(T value);
     }
 }
