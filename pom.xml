@@ -56,6 +56,7 @@ under the License.
         <parquet.version>1.10.1</parquet.version>
         <jetty.version>6.1.26</jetty.version>
         <netty.version>4.1.42.Final</netty.version>
+        <httpclient.version>4.5.6</httpclient.version>
         <jackson.version>2.10.2</jackson.version>
         <protobuf.version>2.5.0</protobuf.version>
         <maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
@@ -68,7 +69,7 @@ under the License.
         <kryo-serializers.version>0.37</kryo-serializers.version>
         <fast-classpath-scanner.version>2.4.5</fast-classpath-scanner.version>
         <maven.assembly>3.1.0</maven.assembly>
-        <grpc.version>1.12.0</grpc.version><!-- CURRENT_GRPC_VERSION -->
+        <grpc.version>1.26.0</grpc.version><!-- CURRENT_GRPC_VERSION -->
         <guava.version>20.0</guava.version>
         <build-helper-maven-plugin.version>1.9.1</build-helper-maven-plugin.version>
         <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
@@ -767,7 +768,7 @@ under the License.
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
-                <version>4.3.4</version>
+                <version>${httpclient.version}</version>
             </dependency>
             <!-- End of Apache HTTP components -->
 
