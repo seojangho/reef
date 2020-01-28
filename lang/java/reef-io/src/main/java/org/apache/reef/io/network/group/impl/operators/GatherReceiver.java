@@ -165,7 +165,7 @@ public class GatherReceiver<T> implements Gather.Receiver<T>, EventHandler<Group
       final byte[] gatheredDataFromChildren = topology.recvFromChildren();
 
       LOG.fine("Using " + dataCodec.getClass().getSimpleName() + " as codec.");
-      try (final ByteArrayInputStream bstream = new ByteArrayInputStream(gatheredDataFromChildren);
+      try (ByteArrayInputStream bstream = new ByteArrayInputStream(gatheredDataFromChildren);
            final DataInputStream dstream = new DataInputStream(bstream)) {
         while (dstream.available() > 0) {
           final String identifier = dstream.readUTF();

@@ -126,7 +126,7 @@ public final class ThreadLogFormatter extends Formatter {
    */
   private String getStackTrace(final Throwable error) {
     if (error != null) {
-      try (final StringWriter sw = new StringWriter();
+      try (StringWriter sw = new StringWriter();
            final PrintWriter pw = new PrintWriter(sw)) {
         pw.println();
         error.printStackTrace(pw);

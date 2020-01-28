@@ -71,7 +71,7 @@ public final class ScatterEncoder {
   private byte[] encodeScatterMsgForNode(final TopologySimpleNode node,
                                          final Map<String, byte[]> taskIdToBytes) {
 
-    try (final ByteArrayOutputStream bstream = new ByteArrayOutputStream();
+    try (ByteArrayOutputStream bstream = new ByteArrayOutputStream();
          final DataOutputStream dstream = new DataOutputStream(bstream)) {
 
       // first write the node's encoded data
@@ -124,7 +124,7 @@ public final class ScatterEncoder {
     for (int taskOrderIndex = 0; taskOrderIndex < taskOrder.size(); taskOrderIndex++) {
       final int elementCount = counts.get(taskOrderIndex);
 
-      try (final ByteArrayOutputStream bstream = new ByteArrayOutputStream();
+      try (ByteArrayOutputStream bstream = new ByteArrayOutputStream();
            final DataOutputStream dstream = new DataOutputStream(bstream)) {
 
         dstream.writeInt(elementCount);
