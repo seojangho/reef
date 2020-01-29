@@ -46,7 +46,7 @@ public final class TopologySerializer {
    */
   public static byte[] encode(final TaskNode root) {
     try (ByteArrayOutputStream bstream = new ByteArrayOutputStream();
-         final DataOutputStream dstream = new DataOutputStream(bstream)) {
+         DataOutputStream dstream = new DataOutputStream(bstream)) {
       encodeHelper(dstream, root);
       return bstream.toByteArray();
 

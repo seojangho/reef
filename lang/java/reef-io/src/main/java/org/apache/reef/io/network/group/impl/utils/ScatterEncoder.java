@@ -72,7 +72,7 @@ public final class ScatterEncoder {
                                          final Map<String, byte[]> taskIdToBytes) {
 
     try (ByteArrayOutputStream bstream = new ByteArrayOutputStream();
-         final DataOutputStream dstream = new DataOutputStream(bstream)) {
+         DataOutputStream dstream = new DataOutputStream(bstream)) {
 
       // first write the node's encoded data
       final String taskId = node.getTaskId();
@@ -125,7 +125,7 @@ public final class ScatterEncoder {
       final int elementCount = counts.get(taskOrderIndex);
 
       try (ByteArrayOutputStream bstream = new ByteArrayOutputStream();
-           final DataOutputStream dstream = new DataOutputStream(bstream)) {
+           DataOutputStream dstream = new DataOutputStream(bstream)) {
 
         dstream.writeInt(elementCount);
         for (final T element : elements.subList(elementsIndex, elementsIndex + elementCount)) {

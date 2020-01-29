@@ -50,7 +50,7 @@ public final class ListCodec<T> implements Codec<List<T>> {
   @Override
   public byte[] encode(final List<T> list) {
     try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-         final DataOutputStream daos = new DataOutputStream(baos)) {
+         DataOutputStream daos = new DataOutputStream(baos)) {
       for (final T t : list) {
         final byte[] tBytes = this.codec.encode(t);
         daos.writeInt(tBytes.length);

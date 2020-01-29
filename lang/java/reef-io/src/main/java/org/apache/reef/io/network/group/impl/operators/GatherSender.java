@@ -132,7 +132,7 @@ public class GatherSender<T> implements Gather.Sender<T>, EventHandler<GroupComm
       final byte[] encodedMyData = dataCodec.encode(myData);
 
       try (ByteArrayOutputStream bstream = new ByteArrayOutputStream();
-           final DataOutputStream dstream = new DataOutputStream(bstream)) {
+           DataOutputStream dstream = new DataOutputStream(bstream)) {
         dstream.writeUTF(netService.getMyId().toString());
         dstream.writeInt(encodedMyData.length);
         dstream.write(encodedMyData);
