@@ -175,10 +175,6 @@
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
 
-        <!-- Detects places in Java code where the diamond operator can be used -->
-        <!-- See REEF-838 -->
-        <!-- FIXME: <module name="DiamondOperatorForVariableDefinition"/> -->
-
         <module name="FinalParameters"/>
         <module name="UnnecessaryParentheses"/>
 
@@ -189,6 +185,7 @@
         <module name="InterfaceIsType"/>
         <module name="VisibilityModifier">
             <property name="protectedAllowed" value="true"/>
+            <property name="packageAllowed" value="true"/>
         </module>
 
 
@@ -215,9 +212,6 @@
         <!-- Exception-handling checks. -->
         <!-- See https://issues.apache.org/jira/browse/REEF-864 -->
         <module name="MutableException"/>
-        <!-- FIXME: <module name="ForbidReturnInFinallyBlockCheck"/> -->
-        <!-- FIXME: <module name="ForbidThrowAnonymousExceptionsCheck"/> -->
-        <!-- FIXME: <module name="UselessSingleCatchCheck"/> -->
 
         <module name="EmptyCatchBlock">
             <property name="commentFormat" value="This is expected"/>
@@ -238,15 +232,6 @@
             <property name="classes" value="java.lang.Throwable, java.lang.Error"/>
         </module>
 
-        <!-- FIXME: <module name="AvoidHidingCauseExceptionCheck" /> -->
-
-        <!-- ConstructorWithoutParams is suppressed for files with the word "Test" in the filename -->
-        <!-- FIXME:
-        <module name="ConstructorWithoutParamsCheck" >
-            <property name="classNameFormat" value=".*Exception$" />
-            <property name="ignoredClassNameFormat" value="UnsupportedOperationException|NotImplementedException|NoSuchElementException" />
-        </module>
-        -->
 
         <!-- Checks for System.exit() call -->
         <!-- See https://issues.apache.org/jira/browse/REEF-1139 -->
